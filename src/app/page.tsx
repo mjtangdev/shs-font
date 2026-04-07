@@ -1,8 +1,16 @@
+"use client";
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Toaster } from "sonner";
+
 import Image from "next/image";
 
 export default function Home() {
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <Toaster position="top-center" richColors /> {/* 添加这一行 */}
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
         <Image
           className="dark:invert"
@@ -41,12 +49,14 @@ export default function Home() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <Image 
+              src="/solar-panel-placeholder.png" 
+              alt="SHS Logo"
+              fill
+              // 关键优化：告诉浏览器在不同断点下的预期宽度
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-contain" 
+              priority
             />
             Deploy Now
           </a>
@@ -61,5 +71,6 @@ export default function Home() {
         </div>
       </main>
     </div>
+    
   );
 }
