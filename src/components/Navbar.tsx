@@ -1,0 +1,196 @@
+'use client';
+
+import { useState, useEffect, useCallback } from "react";
+import { 
+  LogOut, LayoutDashboard, Settings, Zap, Users, 
+  ChevronDown, UserSquare, UserCog, Wallet, 
+  Map, Building2, CreditCard, Tablet, Monitor
+} from "lucide-react";
+import Link from "next/link"; 
+import { useRouter, usePathname } from "next/navigation";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+export function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [openBasic, setOpenBasic] = useState(false);
+  const [openUser, setOpenUser] = useState(false);
+  const [openDevice, setOpenDevice] = useState(false);
+  
+  const [role, setRole] = useState<number>(0);
+  const [username, setUsername] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
+
+  const syncAuth = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const savedRole = localStorage.getItem('user_role');
+    const savedName = localStorage.getItem('username');
+    if (savedRole !== null) {
+      setRole(Number(savedRole));
+      setUsername(savedName || "User");
+      setMounted(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncAuth();
+    window.addEventListener('popstate', syncAuth);
+    window.addEventListener('pageshow', syncAuth);
+    window.addEventListener('storage', syncAuth);
+    return () => {
+      window.removeEventListener('popstate', syncAuth);
+      window.removeEventListener('pageshow', syncAuth);
+      window.removeEventListener('storage', syncAuth);
+    };
+  }, [syncAuth]);
+
+  useEffect(() => { syncAuth(); }, [pathname, syncAuth]);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    toast.success("Logout Successful");
+    setTimeout(() => { window.location.href = '/login'; }, 500);
+  };
+
+  const getRoleBadge = (roleId: number) => {
+    switch (roleId) {
+      case 0: return "Super Admin";
+      case 1: return "Administrator";
+      case 2: return "Operator";
+      case 3: return "Finance";
+      default: return "Staff";
+    }
+  };
+
+  // --- [ 权限判定逻辑 ] ---
+  const IS_SUPERADMIN = mounted && role === 0;
+  const IS_ADMIN = mounted && (role === 1 || role === 0);
+  const IS_OPERATOR = mounted && role === 2;
+  const IS_FINANCE = mounted && role === 3;
+
+  const navItemStyles = "flex items-center justify-center gap-3 h-12 w-44 text-[15px] transition-all group rounded-xl cursor-pointer";
+  const activeStyles = "font-bold text-yellow-500";
+  const inactiveStyles = "font-medium text-slate-500 hover:text-yellow-500";
+  const dropdownItemStyles = "flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-slate-600 hover:text-yellow-600 hover:bg-yellow-50/50 rounded-lg transition-all cursor-pointer";
+
+  return (
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">
+      <div className="w-full px-[50px] h-20 flex items-center justify-between">
+        
+        {/* Logo */}
+        <div className="flex items-center min-w-[60px]">
+          <Link href="/dashboard" className="group cursor-pointer">
+            <div className="bg-slate-900 p-2.5 rounded-2xl text-white group-hover:bg-yellow-500 transition-all duration-300">
+              <Zap size={22} fill="currentColor" />
+            </div>
+          </Link>
+        </div>
+
+        {/* 导航部分 */}
+        <div className="flex items-center gap-1">
+          
+          <Link href="/dashboard" className={`${navItemStyles} ${pathname === '/dashboard' ? activeStyles : inactiveStyles}`}>
+            <LayoutDashboard size={19} />
+            <span>Dashboard</span>
+          </Link>
+
+          {mounted && (
+            <>
+              {/* 1. Settings / Rates 逻辑 */}
+              {IS_ADMIN && (
+                <div onMouseEnter={() => setOpenBasic(true)} onMouseLeave={() => setOpenBasic(false)}>
+                  <DropdownMenu open={openBasic} onOpenChange={setOpenBasic}>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`outline-none ${navItemStyles} ${pathname.includes('/settings') ? activeStyles : inactiveStyles}`}>
+                        <Settings size={19} />
+                        <span>Settings</span>
+                        <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openBasic ? 'rotate-180' : ''}`} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-48 p-1 bg-white shadow-xl rounded-xl border-slate-100">
+                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/regions" className={dropdownItemStyles}><Map size={16}/> Regions</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/branches" className={dropdownItemStyles}><Building2 size={16}/> Branches</Link></DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+
+              {/* 2. Users 逻辑：1,2 是下拉；3 是单图标 */}
+              {(IS_ADMIN || IS_OPERATOR) ? (
+                <div onMouseEnter={() => setOpenUser(true)} onMouseLeave={() => setOpenUser(false)}>
+                  <DropdownMenu open={openUser} onOpenChange={setOpenUser}>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`outline-none ${navItemStyles} ${pathname.includes('/users') || pathname.includes('/customers') ? activeStyles : inactiveStyles}`}>
+                        <Users size={19} />
+                        <span>Users</span>
+                        <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openUser ? 'rotate-180' : ''}`} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-48 p-1 bg-white shadow-xl rounded-xl border-slate-100">
+                      <DropdownMenuItem asChild className="p-0"><Link href="/customers" className={dropdownItemStyles}><UserSquare size={16}/> Customers</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/users" className={dropdownItemStyles}><UserCog size={16}/> Team</Link></DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ) : IS_FINANCE ? (
+                <Link href="/customers" className={`${navItemStyles} ${pathname.includes('/customers') ? activeStyles : inactiveStyles}`}>
+                  <UserSquare size={19} />
+                  <span>Customers</span>
+                </Link>
+              ) : null}
+
+              {/* 3. Devices - 全员可见 (1, 2, 3) */}
+              <div onMouseEnter={() => setOpenDevice(true)} onMouseLeave={() => setOpenDevice(false)}>
+                <DropdownMenu open={openDevice} onOpenChange={setOpenDevice}>
+                  <DropdownMenuTrigger asChild>
+                    <button className={`outline-none ${navItemStyles} ${pathname.includes('/devices') ? activeStyles : inactiveStyles}`}>
+                      <Monitor size={19} />
+                      <span>Devices</span>
+                      <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openDevice ? 'rotate-180' : ''}`} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-48 p-1 bg-white shadow-xl rounded-xl border-slate-100">
+                    <DropdownMenuItem asChild className="p-0"><Link href="/devices/card" className={dropdownItemStyles}><CreditCard size={16}/> IC Cards</Link></DropdownMenuItem>
+                    {!IS_OPERATOR && (
+                      <DropdownMenuItem asChild className="p-0"><Link href="/devices/pos" className={dropdownItemStyles}><CreditCard size={16}/> POS</Link></DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild className="p-0"><Link href="/devices/solar" className={dropdownItemStyles}><Tablet size={16}/> Solar Units</Link></DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* 4. Finance - 全员可见 (1, 2, 3) */}
+              <Link href="/finance" className={`${navItemStyles} ${pathname.includes('/finance') ? activeStyles : inactiveStyles}`}>
+                <Wallet size={19} />
+                <span>Finance</span>
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* 用户信息与登出 */}
+        <div className="flex items-center gap-4 min-w-[150px] justify-end">
+          <div className="flex flex-col items-end border-r border-slate-100 pr-5">
+            <span className="text-[15px] font-bold text-slate-900 leading-none">
+              {mounted ? username : "---"}
+            </span>
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-yellow-600 mt-2 leading-none">
+              {mounted ? getRoleBadge(role) : "Checking..."}
+            </span>
+          </div>
+
+          <button onClick={handleLogout} className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50/50 rounded-xl transition-all active:scale-95 cursor-pointer">
+            <LogOut size={20} />
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+}
