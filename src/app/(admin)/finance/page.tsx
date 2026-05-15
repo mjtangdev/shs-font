@@ -5,7 +5,7 @@ import {
   Search, Download, Wallet, TrendingUp, AlertCircle, 
   ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, XCircle,
   MapPin, Calendar, ChevronDown, ChevronRight, Loader2,
-  Users, Home, Building2, Sun, Moon
+  Users, Home, Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import apiClient from '@/lib/axios';
@@ -18,11 +18,11 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-interface RegionNode {
+interface RegionData {
   id: number;
   name: string;
   level: number;
-  children: RegionNode[];
+  children: RegionData[];
   is_occupied: boolean;
 }
 
@@ -43,7 +43,17 @@ const MOCK_TRANSACTIONS = [
 ];
 
 // --- 左侧树节点组件 (与 Customers 同款) ---
-function RegionNode({ node, selectedId, onSelect, depth = 0 }: { node: any, selectedId: number | null, onSelect: any, depth?: number }) {
+function RegionNode({ 
+  node, 
+  selectedId, 
+  onSelect, 
+  depth = 0 
+}: { 
+  node: RegionData, 
+  selectedId: number | null, 
+  onSelect: (id: number | null) => void, 
+  depth?: number 
+}) {
   const isRoot = node.level === 0;
   const [isOpen, setIsOpen] = useState(true);
   const isSelected = selectedId === node.id;
@@ -55,17 +65,17 @@ function RegionNode({ node, selectedId, onSelect, depth = 0 }: { node: any, sele
   };
   return (
     <div className="w-full select-none">
-      <div onClick={() => onSelect(isSelected ? null : node.id)} className={cn("flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group mb-1", isSelected ? "bg-primary text-white shadow-lg shadow-primary/20" : isRoot ? "bg-slate-50/50 text-slate-900 font-bold hover:bg-slate-100" : "hover:bg-slate-50 text-slate-600")} style={{ paddingLeft: `${depth * 16 + 12}px` }}>
-        <div onClick={(e) => { if (isRoot) return; e.stopPropagation(); setIsOpen(!isOpen); }} className={cn("w-4 h-4 flex items-center justify-center rounded transition-colors", !isRoot && "hover:bg-black/5")}>
+      <div onClick={() => onSelect(isSelected ? null : node.id)} className={cn("flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group mb-1", isSelected ? "bg-primary text-white shadow-lg shadow-primary/20" : isRoot ? "bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 font-bold hover:bg-slate-100 dark:hover:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400")} style={{ paddingLeft: `${depth * 16 + 12}px` }}>
+        <div onClick={(e) => { if (isRoot) return; e.stopPropagation(); setIsOpen(!isOpen); }} className={cn("w-4 h-4 flex items-center justify-center rounded transition-colors", !isRoot && "hover:bg-black/5 dark:hover:bg-white/10")}>
           {hasChildren && !isRoot && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
           {isRoot && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1" /> }
         </div>
         {getIcon()}
-        <span className={cn("text-sm truncate flex-1 tracking-tight", isRoot ? "text-base font-black uppercase" : "font-semibold", isSelected ? "text-white" : "text-slate-700")}>{node.name}</span>
+        <span className={cn("text-sm truncate flex-1 tracking-tight", isRoot ? "text-base font-black uppercase" : "font-semibold", isSelected ? "text-white" : "text-slate-700 dark:text-slate-300")}>{node.name}</span>
       </div>
       {hasChildren && (isRoot || isOpen) && (
         <div className="relative my-0.5">
-          {node.children.map((child: any) => <RegionNode key={child.id} node={child} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />)}
+          {node.children.map((child: RegionData) => <RegionNode key={child.id} node={child} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />)}
         </div>
       )}
     </div>
@@ -73,9 +83,6 @@ function RegionNode({ node, selectedId, onSelect, depth = 0 }: { node: any, sele
 }
 
 export default function FinancePage() {
-  // --- 主题状态 ---
-  const [isDark, setIsDark] = useState(false);
-
   // --- 筛选状态 ---
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -84,7 +91,7 @@ export default function FinancePage() {
 
   // --- 地区树状态 ---
   const [fetchingRegions, setFetchingRegions] = useState(true);
-  const [regions, setRegions] = useState<RegionNode[]>([]);
+  const [regions, setRegions] = useState<RegionData[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
 
   // 获取地区树
@@ -114,10 +121,10 @@ export default function FinancePage() {
 
   const getStatusStyle = (status: string) => {
     switch(status) {
-      case 'completed': return "bg-emerald-50 text-emerald-600";
-      case 'pending': return "bg-amber-50 text-amber-600";
-      case 'failed': return "bg-red-50 text-red-600";
-      default: return "bg-slate-50 text-slate-600";
+      case 'completed': return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+      case 'pending': return "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400";
+      case 'failed': return "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400";
+      default: return "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
     }
   };
 
@@ -136,7 +143,7 @@ export default function FinancePage() {
   });
 
   return (
-    <div className={cn("relative flex h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500", isDark ? "dark" : "")}>
+    <div className="relative flex h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500">
       
       {/* 背景图层：暗黑模式下自带深色半透明背景，如果有图片也会被透出 */}
       <div className="absolute inset-0 z-0 pointer-events-none bg-[#f8fafc] dark:bg-slate-950 dark:bg-[url('/images/dark-bg.jpg')] dark:bg-cover dark:bg-center dark:bg-no-repeat transition-colors duration-500" />
@@ -178,9 +185,6 @@ export default function FinancePage() {
             <Breadcrumbs items={[{ label: 'finance' }]} />
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setIsDark(!isDark)} className="rounded-full h-10 w-10 text-slate-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors">
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </Button>
             <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold border-slate-200 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800 hover:bg-slate-50 dark:text-slate-200 uppercase text-[10px] tracking-widest shadow-sm transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export Report

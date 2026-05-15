@@ -7,7 +7,7 @@ import {
   Map, Building2, CreditCard, Tablet, Monitor
 } from "lucide-react";
 import Link from "next/link"; 
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -15,9 +15,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navbar() {
-  const router = useRouter();
   const pathname = usePathname();
 
   const [openBasic, setOpenBasic] = useState(false);
@@ -33,7 +33,8 @@ export function Navbar() {
     const savedRole = localStorage.getItem('user_role');
     const savedName = localStorage.getItem('username');
     if (savedRole !== null) {
-      setRole(Number(savedRole));
+      const parsedRole = parseInt(savedRole, 10);
+      setRole(isNaN(parsedRole) ? 99 : parsedRole); // 99作为降级的安全默认值 (Staff)
       setUsername(savedName || "User");
       setMounted(true);
     }
@@ -76,18 +77,18 @@ export function Navbar() {
   const IS_FINANCE = mounted && role === 3;
 
   const navItemStyles = "flex items-center justify-center gap-3 h-12 w-44 text-[15px] transition-all group rounded-xl cursor-pointer";
-  const activeStyles = "font-bold text-yellow-500";
-  const inactiveStyles = "font-medium text-slate-500 hover:text-yellow-500";
-  const dropdownItemStyles = "flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-slate-600 hover:text-yellow-600 hover:bg-yellow-50/50 rounded-lg transition-all cursor-pointer";
+  const activeStyles = "font-bold text-yellow-500 dark:text-yellow-400";
+  const inactiveStyles = "font-medium text-slate-500 dark:text-slate-400 hover:text-yellow-500 dark:hover:text-yellow-400";
+  const dropdownItemStyles = "flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-slate-600 dark:text-slate-300 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50/50 dark:hover:bg-yellow-500/10 rounded-lg transition-all cursor-pointer";
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-slate-100 bg-white/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-100 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md transition-colors">
       <div className="w-full px-[50px] h-20 flex items-center justify-between">
         
         {/* Logo */}
         <div className="flex items-center min-w-[60px]">
           <Link href="/dashboard" className="group cursor-pointer">
-            <div className="bg-slate-900 p-2.5 rounded-2xl text-white group-hover:bg-yellow-500 transition-all duration-300">
+            <div className="bg-slate-900 dark:bg-slate-800 p-2.5 rounded-2xl text-white group-hover:bg-yellow-500 dark:group-hover:bg-yellow-400 transition-all duration-300">
               <Zap size={22} fill="currentColor" />
             </div>
           </Link>
@@ -114,7 +115,7 @@ export function Navbar() {
                         <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openBasic ? 'rotate-180' : ''}`} />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-48 p-1 bg-white shadow-xl rounded-xl border-slate-100">
+                    <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
                       <DropdownMenuItem asChild className="p-0"><Link href="/settings/regions" className={dropdownItemStyles}><Map size={16}/> Regions</Link></DropdownMenuItem>
                       <DropdownMenuItem asChild className="p-0"><Link href="/settings/branches" className={dropdownItemStyles}><Building2 size={16}/> Branches</Link></DropdownMenuItem>
                     </DropdownMenuContent>
@@ -133,7 +134,7 @@ export function Navbar() {
                         <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openUser ? 'rotate-180' : ''}`} />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-48 p-1 bg-white shadow-xl rounded-xl border-slate-100">
+                    <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
                       <DropdownMenuItem asChild className="p-0"><Link href="/customers" className={dropdownItemStyles}><UserSquare size={16}/> Customers</Link></DropdownMenuItem>
                       <DropdownMenuItem asChild className="p-0"><Link href="/users" className={dropdownItemStyles}><UserCog size={16}/> Team</Link></DropdownMenuItem>
                     </DropdownMenuContent>
@@ -156,7 +157,7 @@ export function Navbar() {
                       <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openDevice ? 'rotate-180' : ''}`} />
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-48 p-1 bg-white shadow-xl rounded-xl border-slate-100">
+                  <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
                     <DropdownMenuItem asChild className="p-0"><Link href="/devices/card" className={dropdownItemStyles}><CreditCard size={16}/> IC Cards</Link></DropdownMenuItem>
                     {!IS_OPERATOR && (
                       <DropdownMenuItem asChild className="p-0"><Link href="/devices/pos" className={dropdownItemStyles}><CreditCard size={16}/> POS</Link></DropdownMenuItem>
@@ -177,8 +178,11 @@ export function Navbar() {
 
         {/* 用户信息与登出 */}
         <div className="flex items-center gap-4 min-w-[150px] justify-end">
-          <div className="flex flex-col items-end border-r border-slate-100 pr-5">
-            <span className="text-[15px] font-bold text-slate-900 leading-none">
+          
+          <ThemeToggle />
+          
+          <div className="flex flex-col items-end border-r border-slate-100 dark:border-slate-800/50 pr-5">
+            <span className="text-[15px] font-bold text-slate-900 dark:text-slate-100 leading-none">
               {mounted ? username : "---"}
             </span>
             <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-yellow-600 mt-2 leading-none">
@@ -186,7 +190,7 @@ export function Navbar() {
             </span>
           </div>
 
-          <button onClick={handleLogout} className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50/50 rounded-xl transition-all active:scale-95 cursor-pointer">
+          <button onClick={handleLogout} className="p-2.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50/50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-95 cursor-pointer">
             <LogOut size={20} />
           </button>
         </div>

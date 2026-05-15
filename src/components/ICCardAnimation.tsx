@@ -72,7 +72,7 @@ export default function SkeuoICCard() {
           </span>
         </div>
         <span className="text-[6px] font-bold text-slate-400 uppercase tracking-widest pl-2.5">
-          NFC_PROTOCAL
+          NFC_PROTOCOL
         </span>
       </div>
 
