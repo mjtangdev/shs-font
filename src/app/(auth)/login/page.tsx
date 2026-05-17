@@ -11,8 +11,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Loader2, Lock, User, ArrowRight } from 'lucide-react';
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import { TextAnimate } from "@/components/ui/text-animate";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import Cookies from 'js-cookie';
+
+const loginInputClass =
+  "w-full h-14 pl-12 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-2xl focus-visible:ring-1 focus-visible:ring-slate-950 dark:focus-visible:ring-yellow-400 transition-all text-lg text-foreground placeholder:text-muted-foreground";
+
+const loginInputIconClass =
+  "absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 z-10 group-focus-within:text-slate-950 dark:group-focus-within:text-yellow-400 transition-colors pointer-events-none";
 
 export default function SolarWhiteLoginPage() {
   const [username, setUsername] = useState("");
@@ -183,25 +190,36 @@ export default function SolarWhiteLoginPage() {
 
       <Toaster position="top-center" richColors />
 
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+
       <div className="flex flex-col lg:flex-row w-full h-screen">
         
-        {/* 左侧：2/3 展示区 */}
-        <div className="hidden lg:flex lg:w-2/3 flex-col items-center justify-center bg-slate-50/30 p-24 border-r border-slate-100 relative overflow-hidden">
-          <div className="text-center flex flex-col items-center">
+        {/* 左侧：2/3 展示区 — dark 模式与右侧同色 */}
+        <div className="hidden lg:flex lg:w-2/3 flex-col items-center justify-center bg-slate-50/30 dark:bg-slate-950 p-24 border-r border-slate-100 dark:border-slate-800/50 relative overflow-hidden transition-colors">
+          <FlickeringGrid
+            className="absolute inset-0 z-0"
+            maxOpacity={0.1}
+            color="rgb(148, 163, 184)"
+            squareSize={4}
+            gridGap={6}
+          />
+          <div className="text-center flex flex-col items-center relative z-10">
             <img 
               src={ASSETS.SOLAR_SYSTEM} 
-              className="w-full max-w-2xl h-auto mb-16 select-none pointer-events-none"
+              className="w-full max-w-2xl h-auto mb-16 select-none pointer-events-none dark:opacity-90"
             />
-            
-            <TextAnimate animation="blurIn" className="text-5xl font-black text-slate-900 tracking-tighter italic">
-                Solar Home System
+
+            <TextAnimate animation="blurIn" className="text-5xl font-black text-slate-900 dark:text-slate-100 tracking-tighter italic">
+              Solar Home System
             </TextAnimate>
 
           </div>
         </div>
 
         {/* 右侧：1/3 登录区 (白色背景 + 灰色网格) */}
-        <div className="w-full lg:w-1/3 flex flex-col justify-center p-8 lg:p-12 bg-white relative overflow-hidden">
+        <div className="w-full lg:w-1/3 flex flex-col justify-center p-8 lg:p-12 bg-white dark:bg-slate-950 relative overflow-hidden transition-colors">
           
           {/* 💡 白色背景上的灰色闪烁网格 */}
           <FlickeringGrid 
@@ -216,34 +234,34 @@ export default function SolarWhiteLoginPage() {
           <div className="max-w-[400px] w-full mx-auto relative z-10 
             p-10 rounded-[2.5rem] 
             /* 关键：使用极淡的白色背景和厚重的模糊来实现白底上的玻璃感 */
-            bg-white/5 
+            bg-white dark:bg-slate-900/40 
             backdrop-blur-2xl 
-            border border-white/80 
-            shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)]">
+            border border-white/80 dark:border-slate-700/50 
+            shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] dark:shadow-none">
             
             <div className="mb-12">
-              <h2 className="text-3xl font-black text-slate-950 tracking-tight italic">Sign In</h2>
-              <p className="text-slate-500 mt-2 text-lg font-medium italic">Authorized access only</p>
+              <h2 className="text-3xl font-black text-slate-950 dark:text-slate-100 tracking-tight italic">Sign In</h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg font-medium italic">Authorized access only</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="relative group">
-                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 group-focus-within:text-slate-950 transition-colors" />
-                <Input 
+                <User size={18} className={loginInputIconClass} />
+                <Input
                   required
                   placeholder="Username"
-                  className="w-full h-14 pl-12 bg-white/60 border-slate-200 rounded-2xl focus-visible:ring-1 focus-visible:ring-slate-950 transition-all text-lg placeholder:text-slate-300"
+                  className={loginInputClass}
                   onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
 
               <div className="relative group">
-                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10 group-focus-within:text-slate-950 transition-colors" />
-                <Input 
+                <Lock size={18} className={loginInputIconClass} />
+                <Input
                   required
-                  type="password" 
+                  type="password"
                   placeholder="Password"
-                  className="w-full h-14 pl-12 bg-white/60 border-slate-200 rounded-2xl focus-visible:ring-1 focus-visible:ring-slate-950 transition-all text-lg placeholder:text-slate-300"
+                  className={loginInputClass}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
@@ -271,8 +289,8 @@ export default function SolarWhiteLoginPage() {
             </div>
             </form>
 
-            <div className="mt-20 text-center border-t border-slate-100 pt-8">
-              <p className="text-[10px] text-slate-300 font-bold tracking-[0.4em] uppercase">
+            <div className="mt-20 text-center border-t border-slate-100 dark:border-slate-800/50 pt-8">
+              <p className="text-[10px] text-slate-300 dark:text-slate-600 font-bold tracking-[0.4em] uppercase">
                 Terminal v0.0.1 
               </p>
             </div>
@@ -283,41 +301,41 @@ export default function SolarWhiteLoginPage() {
 
       {/* 💡 默认密码修改提示弹出框 - 采用与页面一致的拟物化白玻风格 */}
       <Dialog open={showPasswordDialog} onOpenChange={() => {}}>
-        <DialogContent className="max-w-[420px] p-0 overflow-hidden border-none rounded-3xl bg-white shadow-[0_30px_100px_-20px_rgba(0,0,0,0.15)]">
+        <DialogContent className="max-w-[420px] p-0 overflow-hidden border-none rounded-3xl bg-white dark:bg-slate-900/60 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.15)]">
           <DialogHeader className="sr-only"><DialogTitle>Security Action Required</DialogTitle><DialogDescription>Your account is using a default password and needs to be updated.</DialogDescription></DialogHeader>
           <div className="p-10">
               
               <div className="mb-8 text-center flex flex-col items-center">
-                <div className="w-12 h-12 bg-yellow-50 rounded-xl flex items-center justify-center text-yellow-600 mb-4">
+                <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-500/10 rounded-xl flex items-center justify-center text-yellow-600 dark:text-yellow-400 mb-4">
                   <Lock size={24} />
                 </div>
-                <h3 className="text-xl font-black text-slate-950 tracking-tight italic">Update Default Password</h3>
-                <p className="text-slate-500 mt-2 text-sm font-medium leading-relaxed px-4">
+                <h3 className="text-xl font-black text-slate-950 dark:text-slate-100 tracking-tight italic">Update Default Password</h3>
+                <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium leading-relaxed px-4">
                   For security reasons, you must change your password before proceeding to the dashboard.
                 </p>
               </div>
 
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div className="relative group">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
-                  <Input 
+                  <Lock size={16} className={loginInputIconClass} />
+                  <Input
                     required
                     type="password"
                     placeholder="New Password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-12 pl-12 bg-slate-50 border-slate-100 rounded-2xl focus-visible:ring-1 focus-visible:ring-slate-950 transition-all"
+                    className={`h-12 ${loginInputClass}`}
                   />
                 </div>
                 <div className="relative group">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 z-10" />
-                  <Input 
+                  <Lock size={16} className={loginInputIconClass} />
+                  <Input
                     required
                     type="password"
                     placeholder="Confirm New Password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-12 pl-12 bg-slate-50 border-slate-100 rounded-2xl focus-visible:ring-1 focus-visible:ring-slate-950 transition-all"
+                    className={`h-12 ${loginInputClass}`}
                   />
                 </div>
 

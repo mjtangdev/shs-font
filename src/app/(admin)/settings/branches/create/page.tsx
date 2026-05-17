@@ -167,7 +167,7 @@ export default function CreateEntityPage() {
           ]}
         />
 
-        <div className="bg-white rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
+        <div className="bg-white dark:bg-slate-900/60 rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-slate-50 pb-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-200 text-slate-900">
@@ -187,7 +187,7 @@ export default function CreateEntityPage() {
                   onClick={() => setFormData({...formData, entity_type: t.id})}
                   className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
-                    formData.entity_type === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-500'
+                    formData.entity_type === t.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-500'
                   )}
                 >
                   <t.icon size={14} /> {t.label}
@@ -199,7 +199,7 @@ export default function CreateEntityPage() {
           <form onSubmit={handleEntitySubmit} className="space-y-10">
             <div className="space-y-3">
               <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Entity Name</label>
-              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
             </div>
 
             <div className="space-y-3">
@@ -213,12 +213,12 @@ export default function CreateEntityPage() {
                     <ChevronDown size={24} className="text-slate-300 group-hover:text-slate-900" />
                   </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white outline-none">
-                  <DialogHeader className="p-10 bg-white border-b border-slate-50">
+                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
+                  <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
                     <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Select Region</DialogTitle>
                     <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
                   </DialogHeader>
-                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white">
+                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
                     {fetchingRegions ? <Loader2 className="animate-spin text-yellow-400 mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
                   </div>
                 </DialogContent>
@@ -227,7 +227,7 @@ export default function CreateEntityPage() {
 
             <div className="space-y-3">
               <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Physical Address</label>
-              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
+              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
             </div>
 
             <button type="submit" disabled={loading} className="w-full h-20 bg-yellow-400 text-slate-900 rounded-xl font-black uppercase text-lg shadow-xl shadow-yellow-400/20 active:scale-[0.98] hover:bg-yellow-500 transition-all flex items-center justify-center gap-4 mt-6 disabled:opacity-50">
@@ -239,7 +239,7 @@ export default function CreateEntityPage() {
 
       {/* --- 注册成功提示弹窗 --- */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
-        <DialogContent className="max-w-[420px] rounded-xl border-none bg-white p-0 shadow-2xl overflow-hidden">
+        <DialogContent className="max-w-[420px] rounded-xl border-none bg-white dark:bg-slate-900/60 p-0 shadow-2xl overflow-hidden">
           <div className="h-2 bg-green-500" />
           <div className="p-10 flex flex-col items-center text-center space-y-6">
             <div className="w-20 h-20 bg-green-50 rounded-2xl flex items-center justify-center text-green-600">

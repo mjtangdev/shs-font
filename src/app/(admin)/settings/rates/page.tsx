@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  History, Edit3, ArrowLeft, Clock, User, 
-  TrendingUp, Calculator, CalendarDays, ShieldCheck, Landmark 
+  History, TrendingUp, Calculator, CalendarDays, ShieldCheck, Landmark,
+  RefreshCcw, Clock, User
 } from 'lucide-react';
-import Link from 'next/link';
-import { 
+import {
   Dialog, DialogContent, DialogTitle, DialogDescription 
 } from "@/components/ui/dialog";
 import { 
@@ -14,7 +13,9 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import apiClient from '@/lib/axios'; 
-
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import Breadcrumbs from "@/components/Breadcrumbs"
 
 export default function RatesPage() {
@@ -28,22 +29,23 @@ export default function RatesPage() {
   const renderRoleBadge = (role: number) => {
     if (role === 1) {
       return (
-        <div className="flex items-center gap-1.5 text-xs bg-slate-900 text-white px-2.5 py-1 rounded-md font-bold uppercase tracking-tighter w-fit">
-          <ShieldCheck size={13} /> Admin
+        <div className="flex items-center gap-1.5 text-[8px] bg-slate-900 dark:bg-slate-800 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest w-fit border border-white/5">
+          <ShieldCheck size={10} /> Admin
         </div>
       );
     }
     if (role === 2) {
       return (
-        <div className="flex items-center gap-1.5 text-xs bg-blue-600 text-white px-2.5 py-1 rounded-md font-bold uppercase tracking-tighter w-fit">
-          <Landmark size={13} /> Finance
+        <div className="flex items-center gap-1.5 text-[8px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-black uppercase tracking-widest w-fit border border-primary/20">
+          <Landmark size={10} /> Finance
         </div>
       );
     }
-    return <span className="text-sm text-slate-400 font-bold uppercase italic">Staff</span>;
+    return <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest">Staff</span>;
   };
 
   const fetchRateData = useCallback(async () => {
+    setLoading(true);
     try {
       const [currentRes, historyRes] = await Promise.all([
         apiClient.get('/rates/daily/current'),
@@ -60,7 +62,9 @@ export default function RatesPage() {
         setHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
       }
     } catch (err) {
-      console.error("Fetch error:", err);
+      toast.error("Failed to sync rate data");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -83,142 +87,148 @@ export default function RatesPage() {
   };
 
   return (
-    <div className="py-8 px-4 md:px-[50px] max-w-[1920px] mx-auto space-y-8 animate-in fade-in duration-700">
+    <div className="relative flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-[#f8fafc] dark:bg-slate-950">
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Breadcrumbs 
-          items={[
-            { label: 'Rates' } 
-          ]}
+      {/* 1. Top Header */}
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors">
+        <Breadcrumbs items={[{ label: 'system rates' }]} />
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={fetchRateData} disabled={loading} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none transition-all active:scale-95">
+            <RefreshCcw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} /> Refresh
+          </Button>
+          <Button onClick={() => setShowRateDialog(true)} className="rounded-xl h-10 px-6 font-bold shadow-sm dark:shadow-none transition-all active:scale-95 uppercase text-[10px] tracking-widest">
+            <TrendingUp className="h-4 w-4 mr-2" /> Update Daily Rate
+          </Button>
+        </div>
+      </header>
 
-        />
-        <button 
-          onClick={() => setShowRateDialog(true)}
-          className="bg-slate-900 text-white px-10 py-5 rounded-3xl font-black text-sm hover:bg-yellow-400 hover:text-slate-900 transition-all active:scale-95 shadow-2xl shadow-slate-200 uppercase"
-        >
-          Update Daily Rate
-        </button>
-      </div>
+      {/* 2. Content Area */}
+      <main className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
+        <div className="max-w-[1920px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
-        
-        {/* 左侧：3/12 占比 */}
-        <div className="lg:col-span-3">
-          <div className="bg-slate-900 rounded-[3.5rem] p-8 text-white relative overflow-hidden shadow-2xl h-full flex flex-col justify-between border border-white/5">
-            <CalendarDays className="absolute -right-12 -bottom-12 text-white/[0.03] w-56 h-56" />
-            <div className="relative z-10">
-              <div className="w-16 h-16 bg-yellow-400 text-slate-900 rounded-3xl flex items-center justify-center mb-10 shadow-xl shadow-yellow-400/20">
-                <CalendarDays size={32} />
-              </div>
-              <h3 className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[11px] mb-3">Active Rate</h3>
-              <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-black italic tracking-tighter tabular-nums">{currentDisplayRate}</span>
-                <span className="text-yellow-400 font-black text-base italic">PHP/D</span>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
 
-              <div className="mt-14 pt-10 border-t border-white/5 space-y-6">
+            {/* Active Rate Card */}
+            <Card className="lg:col-span-4 bg-slate-900 dark:bg-slate-900/60 rounded-2xl p-10 text-white relative overflow-hidden border-none shadow-sm dark:shadow-none h-full flex flex-col justify-between">
+              <CalendarDays className="absolute -right-12 -bottom-12 text-white/[0.03] w-56 h-56" />
+              <div className="relative z-10 space-y-12">
+                <div className="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center shadow-xl shadow-primary/20">
+                  <CalendarDays size={32} />
+                </div>
                 <div>
-                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Live Status</p>
-                  <div className="flex items-center gap-2.5 text-emerald-400 font-black text-xs uppercase tracking-widest">
-                    <div className="w-2.5 h-2.5 rounded-full bg-current animate-pulse" />
-                    System Active
+                  <h3 className="text-slate-500 font-black uppercase tracking-[0.2em] text-[10px] mb-3">Active Standard Rate</h3>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-7xl font-black italic tracking-tighter tabular-nums">{currentDisplayRate}</span>
+                    <span className="text-primary font-black text-xl italic uppercase">PHP/Day</span>
                   </div>
                 </div>
-                <div>
-                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Last Modified</p>
-                  <span className="text-xs font-bold font-mono text-slate-300">{lastUpdate}</span>
+
+                <div className="pt-10 border-t border-white/5 space-y-6">
+                  <div>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2 italic">Status Registry</p>
+                    <div className="flex items-center gap-2.5 text-green-400 font-black text-[10px] uppercase tracking-[0.2em]">
+                      <div className="w-2.5 h-2.5 rounded-full bg-current animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]" />
+                      Protocol Active
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2 italic">Last Modified</p>
+                    <span className="text-xs font-bold font-mono text-slate-400">{lastUpdate}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </Card>
+
+            {/* History Table */}
+            <Card className="lg:col-span-8 bg-white dark:bg-slate-900/60 border-none rounded-2xl p-10 shadow-sm h-full flex flex-col">
+              <div className="flex items-center gap-4 mb-10">
+                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-primary"><History size={20} /></div>
+                <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 dark:text-slate-100 italic">Audit Ledger</h3>
+              </div>
+
+              <div className="flex-1 overflow-auto">
+                <Table>
+                  <TableHeader className="bg-transparent border-b border-slate-100 dark:border-white/5">
+                    <TableRow className="hover:bg-transparent border-none">
+                      <TableHead className="py-4 font-black uppercase text-[9px] tracking-[0.2em] text-slate-400">Value (PHP)</TableHead>
+                      <TableHead className="py-4 font-black uppercase text-[9px] tracking-[0.2em] text-slate-400">Authorized By</TableHead>
+                      <TableHead className="py-4 font-black uppercase text-[9px] tracking-[0.2em] text-slate-400">Security Clearance</TableHead>
+                      <TableHead className="py-4 text-right font-black uppercase text-[9px] tracking-[0.2em] text-slate-400">Timestamp</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
+                    {history.length > 0 ? history.map((item) => (
+                      <TableRow key={item.id} className="border-none even:bg-slate-50/50 dark:even:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all group">
+                        <TableCell className="py-6 border-none">
+                          <div className="flex items-center gap-3 text-slate-900 dark:text-slate-100 font-black italic tracking-tighter text-xl group-hover:text-primary transition-colors">
+                            {parseFloat(item.daily_rate).toFixed(2)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-6 border-none">
+                          <div className="flex items-center gap-2.5 text-slate-900 dark:text-slate-300 font-black text-[12px] uppercase">
+                            <User size={14} className="text-slate-400" />
+                            {item.modifier_name}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-6 border-none">{renderRoleBadge(item.modifier_role)}</TableCell>
+                        <TableCell className="py-6 text-right border-none">
+                          <div className="flex items-center justify-end gap-2.5 text-slate-400 font-mono text-[10px] font-bold">
+                            <Clock size={12} />
+                            {item.updated_at}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow className="border-none">
+                        <TableCell colSpan={4} className="h-72 text-center border-none">
+                          <div className="flex flex-col items-center justify-center text-slate-300 gap-3 opacity-20">
+                            <History size={48} strokeWidth={1} />
+                            <p className="font-black uppercase tracking-widest text-[10px]">No Audit Records Sync'd</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
           </div>
         </div>
-
-        {/* 右侧：9/12 占比 */}
-        <div className="lg:col-span-9">
-          <div className="bg-white border border-slate-100 rounded-[3.5rem] p-10 shadow-sm h-full flex flex-col">
-            <div className="flex items-center gap-4 mb-10">
-              <div className="p-3 bg-slate-50 rounded-2xl text-slate-400"><History size={20} /></div>
-              <h3 className="text-lg font-black uppercase tracking-tight text-slate-800 italic">Modification History</h3>
-            </div>
-
-            <div className="flex-1 overflow-auto">
-              <Table className="border-none">
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="py-6 font-black uppercase text-xs tracking-[0.15em] text-slate-400">Rate Value</TableHead>
-                    <TableHead className="py-6 font-black uppercase text-xs tracking-[0.15em] text-slate-400">Modified By</TableHead>
-                    <TableHead className="py-6 font-black uppercase text-xs tracking-[0.15em] text-slate-400">Access Role</TableHead>
-                    <TableHead className="py-6 text-right font-black uppercase text-xs tracking-[0.15em] text-slate-400">Timestamp</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {history.length > 0 ? history.map((item) => (
-                    <TableRow key={item.id} className="border-none even:bg-slate-50/70 hover:bg-yellow-50/50 transition-all group">
-                      <TableCell className="py-7 border-none">
-                        <div className="flex items-center gap-3 text-slate-900 font-black italic tracking-tighter text-xl">
-                          <TrendingUp size={16} className="text-slate-300 group-hover:text-yellow-500 transition-colors" />
-                          {parseFloat(item.daily_rate).toFixed(2)}
-                          <span className="text-[10px] font-bold text-slate-400 not-italic uppercase tracking-widest ml-1">PHP</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-7 border-none">
-                        <div className="flex items-center gap-2.5 text-slate-900 font-black text-sm uppercase">
-                          <User size={14} className="text-slate-300" />
-                          {item.modifier_name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-7 border-none">{renderRoleBadge(item.modifier_role)}</TableCell>
-                      <TableCell className="py-7 text-right border-none">
-                        {/* 修正点：日期改为黑色 text-slate-900，字号提升到 text-sm */}
-                        <div className="flex items-center justify-end gap-2.5 text-slate-900 font-mono text-sm font-bold">
-                          <Clock size={14} className="text-slate-300" />
-                          {item.updated_at}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )) : (
-                    <TableRow className="border-none">
-                      <TableCell colSpan={4} className="h-72 text-center border-none">
-                        <div className="flex flex-col items-center justify-center text-slate-300 gap-3 opacity-40">
-                          <History size={48} strokeWidth={1} />
-                          <p className="font-black uppercase tracking-widest text-sm">No Audit Logs Found</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
 
       {/* Accessible Dialog */}
       <Dialog open={showRateDialog} onOpenChange={setShowRateDialog}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden border-none rounded-[3.5rem] bg-white shadow-2xl">
+        <DialogContent className="max-w-xl p-0 overflow-hidden border-none rounded-3xl bg-white dark:bg-slate-900 shadow-2xl">
           <div className="sr-only">
             <DialogTitle>Update System Rate</DialogTitle>
-            <DialogDescription>Change global daily rate.</DialogDescription>
+            <DialogDescription>Change global daily rate protocol.</DialogDescription>
           </div>
-          <div className="p-12 pb-0 flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-yellow-50 rounded-3xl flex items-center justify-center mb-8">
-              <Calculator className="text-yellow-500" size={36} />
+          <div className="p-12 pb-6 flex flex-col items-center text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center">
+              <Calculator className="text-primary" size={36} />
             </div>
-            <h2 className="text-slate-900 text-3xl font-black italic uppercase tracking-tight">Update Rate</h2>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Set Global Standard Daily Rate</p>
+            <div>
+              <h2 className="text-slate-900 dark:text-slate-100 text-3xl font-black italic uppercase tracking-tighter">Adjust Protocol</h2>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-2">Standard Global Daily Rate Adjustment</p>
+            </div>
           </div>
-          <div className="p-12 space-y-10">
-            <input 
-              type="number" step="0.01" value={dailyRate} onChange={(e) => setDailyRate(e.target.value)} 
-              className="w-full text-center py-12 bg-slate-50 border-none rounded-[2rem] outline-none font-black text-7xl text-slate-900 focus:ring-8 ring-yellow-400/5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-            />
-            <button 
-              onClick={handleRateSubmit} disabled={loading}
-              className="w-full bg-slate-900 text-white py-8 rounded-[2rem] font-black text-xl uppercase tracking-widest hover:bg-yellow-400 hover:text-slate-900 transition-all active:scale-95 disabled:opacity-50 shadow-xl shadow-slate-200"
-            >
-              {loading ? "PROCESSING..." : "CONFIRM UPDATE"}
-            </button>
+          <div className="p-12 space-y-8">
+            <div className="relative group">
+               <input
+                type="number" step="0.01" value={dailyRate} onChange={(e) => setDailyRate(e.target.value)}
+                className="w-full text-center py-10 bg-slate-50 dark:bg-slate-800/50 border-none rounded-2xl outline-none font-black text-7xl text-slate-900 dark:text-white focus:ring-4 ring-primary/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+               />
+               <span className="absolute bottom-4 right-8 text-xs font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest italic">PHP / DAY</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={handleRateSubmit} disabled={loading}
+                className="w-full h-16 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-primary/10"
+              >
+                {loading ? <RefreshCcw className="animate-spin" /> : "Authorize & Deploy Protocol"}
+              </Button>
+              <Button variant="ghost" onClick={() => setShowRateDialog(false)} className="h-12 rounded-xl text-slate-400 font-black uppercase text-[10px] tracking-widest">Abort Change</Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

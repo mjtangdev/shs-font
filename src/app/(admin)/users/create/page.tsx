@@ -159,10 +159,10 @@ export default function CreateUserPage() {
   };
 
   const labelStyles = "text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1";
-  const inputStyles = "w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900 placeholder:text-slate-300";
+  const inputStyles = "w-full h-16 px-6 border-2 border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground placeholder:text-muted-foreground";
 
   return (
-    <div className="min-h-screen bg-slate-50/50 py-12 px-6 tracking-tighter">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-transparent py-12 px-6 tracking-tighter transition-colors">
       <div className="max-w-[750px] mx-auto space-y-6">
         
         {/* 面包屑导航 */}
@@ -174,7 +174,7 @@ export default function CreateUserPage() {
         />
 
         {/* 主卡片容器 */}
-        <div className="bg-white rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
+        <div className="bg-white dark:bg-slate-900/60 rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
           
           {/* 头部标题与角色切换 */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-slate-50 pb-8">
@@ -198,7 +198,7 @@ export default function CreateUserPage() {
                   onClick={() => setFormData({...formData, role: r.id})}
                   className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
-                    formData.role === r.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-500'
+                    formData.role === r.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-500'
                   )}
                 >
                   {formData.role === r.id && <ShieldCheck size={12} className="text-yellow-500" />}
@@ -273,12 +273,12 @@ export default function CreateUserPage() {
                     <ChevronDown size={24} className="text-slate-300 group-hover:text-slate-900" />
                   </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white outline-none">
-                  <DialogHeader className="p-10 bg-white border-b border-slate-50">
+                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
+                  <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
                     <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Select Region</DialogTitle>
                     <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
                   </DialogHeader>
-                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white">
+                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
                     {fetchingRegions ? <Loader2 className="animate-spin text-yellow-400 mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
                   </div>
                 </DialogContent>
@@ -286,7 +286,7 @@ export default function CreateUserPage() {
             </div>
 
             {/* 联系信息（可选） */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50 dark:border-slate-800/50">
               <div className="space-y-3">
                 <label className={labelStyles}>Mobile Number</label>
                 <div className="relative">

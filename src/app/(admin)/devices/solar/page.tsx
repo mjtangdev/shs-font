@@ -2,34 +2,38 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, ChevronRight, Loader2, 
+  Search, Loader2,
   Package, CheckCircle2, 
   AlertTriangle, MapPin, FileDown,
-  Zap, Lock, Unlock, Building2, Cpu,
-  Layers
+  Zap, Lock, Unlock, Building2, Layers,
+  RefreshCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
-const STATUS_MAP: Record<number, { label: string, color: string, activeColor: string, icon: React.ReactNode }> = {
+const STATUS_MAP: Record<number, { label: string, badgeVariant: string, icon: React.ReactNode }> = {
   0: { 
     label: 'IN STOCK', 
-    color: 'text-slate-400 border-transparent hover:text-slate-900', 
-    activeColor: 'bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-200',
+    badgeVariant: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
     icon: <Package size={12} /> 
   },
   1: { 
     label: 'ACTIVATED', 
-    color: 'text-slate-400 border-transparent hover:text-yellow-600', 
-    activeColor: 'bg-[#FFD700] text-slate-900 border-[#FFD700] shadow-md shadow-yellow-100',
+    badgeVariant: "bg-primary/10 text-primary border-primary/20",
     icon: <CheckCircle2 size={12} /> 
   },
   3: { 
     label: 'DAMAGED', 
-    color: 'text-slate-400 border-transparent hover:text-red-600', 
-    activeColor: 'bg-red-500 text-white border-red-500 shadow-md shadow-red-100',
+    badgeVariant: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
     icon: <AlertTriangle size={12} /> 
   }
 };
@@ -62,7 +66,7 @@ export default function SolarUnitPage() {
       const data = Array.isArray(res.data) ? res.data : (res.data.items || []);
       setUnits(data);
     } catch (err) {
-      toast.error("系统同步错误：无法访问 SHS 注册表");
+      toast.error("SYSTEM SYNC ERROR: Solar registry inaccessible.");
     } finally {
       setLoading(false);
     }
@@ -82,17 +86,17 @@ export default function SolarUnitPage() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success("导出成功");
+      toast.success("Export successful");
     } catch (err) {
-      toast.error("导出失败");
+      toast.error("Export failed");
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleDevAlert = () => {
-    toast.info("功能正在开发中", {
-      description: "该模块正在调试校准中，请等待后续版本更新。",
+    toast.info("Feature in development", {
+      description: "Module undergoing calibration. Please wait for the next update.",
       className: "font-bold text-[12px] tracking-tight",
     });
   };
@@ -101,150 +105,160 @@ export default function SolarUnitPage() {
 
   const filteredUnits = units.filter(u => {
     const searchStr = searchQuery.toLowerCase();
-    return (
-      (u.shs_machine_id?.toLowerCase() || "").includes(searchStr) || 
-      (u.customer_name?.toLowerCase() || "").includes(searchStr)
-    ) && (statusFilter === 'all' || u.status.toString() === statusFilter);
+    const matchesSearch = (u.shs_machine_id?.toLowerCase() || "").includes(searchStr) ||
+                          (u.customer_name?.toLowerCase() || "").includes(searchStr);
+    const matchesStatus = statusFilter === 'all' || u.status.toString() === statusFilter;
+    return matchesSearch && matchesStatus;
   });
 
   return (
-    <div className="py-8 px-6 md:px-[60px] max-w-[1920px] mx-auto space-y-10 animate-in fade-in duration-700">
+    <div className="relative flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-[#f8fafc] dark:bg-slate-950">
       
-      {/* 1. Breadcrumbs */}
-      <nav className="flex items-center gap-3 text-slate-400">
-        <Link href="/dashboard" className="flex items-center gap-2 hover:text-slate-900 transition-colors group">
-          <span className="text-[10px] font-black uppercase tracking-widest group-hover:italic">dashboard</span>
-        </Link>
-        <ChevronRight size={12} className="text-slate-200" />
-        <div className="text-slate-900 italic font-black text-[10px] uppercase tracking-widest underline decoration-yellow-400 decoration-2 underline-offset-4 tracking-[0.2em]">Solar Device Registry</div>
-      </nav>
-
-      {/* 2. Control Panel */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-4 rounded-[32px]">
-        <div className="flex items-center gap-6 flex-nowrap">
-          <div className="relative w-full lg:w-[480px] group">
-            <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-yellow-500 transition-colors" size={20} />
+      {/* 1. Top Header */}
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
+        <div className="flex items-center gap-8 flex-1">
+          <Breadcrumbs items={[{ label: "solar assets" }]} />
+          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
             <input 
-              type="text"
-              placeholder="搜索序列号 (SN) 或 客户..."
-              value={searchQuery}
+              type="text" placeholder="SEARCH BY MACHINE ID OR CUSTOMER..." value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-14 pr-6 h-[64px] bg-transparent border-b-2 border-slate-900 text-[11px] font-black uppercase tracking-[0.2em] outline-none transition-all text-slate-950 placeholder:text-slate-300"
+              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-950 dark:text-slate-100 placeholder:text-slate-400"
             />
           </div>
-          <div className="flex items-center h-[64px] gap-1">
-            <button onClick={() => setStatusFilter('all')} className={cn("px-8 h-full rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all", statusFilter === 'all' ? "bg-slate-900 text-white shadow-xl shadow-slate-200" : "text-slate-400 hover:text-slate-950")}>ALL</button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleExport} disabled={isExporting} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none">
+            {isExporting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <FileDown className="h-4 w-4 mr-2" />} Export
+          </Button>
+          <Button variant="outline" onClick={fetchUnits} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none">
+            <RefreshCcw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} /> Refresh
+          </Button>
+          <Link href="/devices/solar/create" passHref>
+            <Button asChild className="rounded-xl h-10 px-6 font-bold shadow-sm dark:shadow-none transition-all active:scale-95 uppercase text-[10px] tracking-widest">
+              <span><Zap className="h-4 w-4 mr-2" /> Reg. Unit</span>
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* 2. Content Area */}
+      <div className="flex flex-1 overflow-hidden relative">
+        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800/50 bg-white/90 dark:bg-slate-950/50 backdrop-blur-xl p-5 flex flex-col gap-4 shrink-0 shadow-sm transition-colors">
+          <div className="space-y-2">
+            <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600 mb-2">Inventory Filter</h3>
+            <button onClick={() => setStatusFilter('all')} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-4 text-sm font-bold border", statusFilter === 'all' ? "bg-slate-900 text-white border-slate-900 shadow-xl dark:bg-white dark:text-slate-900 scale-[1.02]" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50")}><Layers className="h-4 w-4" /><span>Full Registry</span></button>
             {[0, 1, 3].map((sId) => (
-              <button key={sId} onClick={() => setStatusFilter(sId.toString())} className={cn("flex items-center gap-3 px-6 h-full rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all", statusFilter === sId.toString() ? STATUS_MAP[sId].activeColor : "text-slate-400 hover:text-slate-950")}>
-                {STATUS_MAP[sId].icon} {STATUS_MAP[sId].label}
+              <button key={sId} onClick={() => setStatusFilter(sId.toString())} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-1", statusFilter === sId.toString() ? "bg-primary text-white border-transparent" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50")}>
+                {STATUS_MAP[sId].label}
               </button>
             ))}
           </div>
-        </div>
-        <div className="flex items-center gap-4 h-[64px]">
-          <button onClick={handleExport} disabled={isExporting} className="w-16 h-full rounded-2xl border-2 border-slate-100 text-slate-400 transition-all hover:border-slate-900 hover:text-slate-900">
-            {isExporting ? <Loader2 className="animate-spin" size={22} /> : <FileDown size={22} />}
-          </button>
-          <Link href="/devices/solar/create">
-            <button className="bg-yellow-400 text-slate-900 rounded-2xl h-12 px-8 font-black uppercase text-[10px] tracking-widest shadow-xl shadow-yellow-100 hover:bg-slate-900 hover:text-white transition-all active:scale-95">
-               + New Solar Unit
-            </button>
-          </Link>
-        </div>
+        </aside>
+
+        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
+          <div className="max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
+                <Table className="table-fixed">
+                  <TableHeader className="bg-transparent border-b border-slate-100 dark:border-white/5 transition-colors">
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableHead className="w-[40%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">SHS Machine Identity & Components</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Deployment</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Status</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Production</TableHead>
+                      <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ops</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
+                    {loading ? (
+                       <TableRow>
+                          <TableCell colSpan={5} className="h-[400px] text-center">
+                              <div className="flex flex-col items-center justify-center gap-4 text-slate-300 italic">
+                                <Loader2 className="animate-spin text-primary" size={40} />
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Syncing Registry...</span>
+                              </div>
+                          </TableCell>
+                       </TableRow>
+                    ) : filteredUnits.map((unit) => (
+                      <TableRow key={unit.id} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
+                        <TableCell className="py-8 px-8 align-middle">
+                          <div className="flex items-start gap-6">
+                              <div className={cn(
+                                  "w-12 h-12 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 shadow-sm",
+                                  unit.status === 1 ? "border-primary/20 bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-400"
+                              )}>
+                                  <Layers size={22} />
+                              </div>
+
+                              <div className="flex flex-col space-y-4">
+                                  <div className="bg-slate-900 dark:bg-slate-800 text-white px-4 py-2 rounded-lg inline-flex flex-col min-w-[220px] shadow-lg dark:shadow-none border border-white/5">
+                                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Master Machine ID</span>
+                                      <span className="font-mono text-base font-black italic tracking-wider">{unit.shs_machine_id}</span>
+                                  </div>
+
+                                  <div className="relative pl-2 space-y-2">
+                                      {[
+                                          { label: 'SOLAR PANEL', id: unit.solar_equipment_id },
+                                          { label: 'RADIO UNIT', id: unit.radio_id },
+                                          { label: 'FLASH TORCH', id: unit.flashlight_id },
+                                          { label: 'LED LIGHTS', id: unit.led_light_id }
+                                      ].map((item, idx, arr) => (
+                                          <div key={item.label} className="relative flex items-center gap-3 pl-6 h-5">
+                                              <div className="absolute left-0 top-[-10px] bottom-1/2 w-[2px] bg-slate-200 dark:bg-slate-800" />
+                                              <div className="absolute left-0 top-1/2 w-4 h-[2px] bg-slate-200 dark:bg-slate-800" />
+                                              {idx === arr.length - 1 && <div className="absolute left-0 top-1/2 bottom-0 w-[2px] bg-white dark:bg-slate-900" />}
+
+                                              <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest w-20">{item.label}</span>
+                                              <span className="text-[10px] font-bold font-mono text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800/50 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 uppercase tracking-tight">{item.id}</span>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle text-center">
+                          <div className="inline-flex flex-col gap-2 items-center">
+                            <div className="flex items-center gap-2 text-[11px] font-black uppercase italic text-slate-900 dark:text-slate-100">
+                               <Building2 size={13} className="text-primary" />
+                               {unit.customer_name === "-" ? <span className="text-slate-300 dark:text-slate-700 font-bold not-italic">Unassigned</span> : unit.customer_name}
+                            </div>
+                            <div className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
+                               {unit.city_name} • {unit.town_name}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle text-center">
+                          <div className="flex flex-col items-center gap-2">
+                             <Badge className={cn("px-4 py-1.5 rounded-full font-black text-[9px] uppercase border-none shadow-sm", STATUS_MAP[unit.status]?.badgeVariant)}>
+                                {STATUS_MAP[unit.status]?.label}
+                             </Badge>
+                             <div className={cn(
+                                "flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.1em]",
+                                unit.status === 1 ? "text-green-600 dark:text-green-400" : "text-slate-400"
+                             )}>
+                                {unit.status === 1 ? <Unlock size={10} strokeWidth={3} /> : <Lock size={10} strokeWidth={3} />}
+                                {unit.status === 1 ? "Active Protocol" : "Standby/Locked"}
+                             </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle text-right font-mono text-[10px] font-black text-slate-400 italic">
+                          {unit.production_date?.split('T')[0]}
+                        </TableCell>
+                        <TableCell className="py-8 px-8 pr-8 text-right align-middle">
+                          <div className="flex items-center justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={handleDevAlert} className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9"><MapPin size={16} /></Button>
+                              <Button variant="ghost" size="icon" onClick={handleDevAlert} className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"><Lock size={16} /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+            </Card>
+          </div>
+        </main>
       </div>
-
-      {/* 3. Main Table */}
-      {loading ? (
-        <div className="h-[400px] flex flex-col items-center justify-center gap-4 text-slate-300 italic"><Loader2 className="animate-spin text-yellow-400" size={40} /><span className="text-[10px] font-black uppercase tracking-[0.3em]">Syncing Registry...</span></div>
-      ) : (
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50">
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 py-6 px-10">SHS Machine Identity & Components</th>
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-8 text-center">Deployment</th>
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-8 text-center">Status</th>
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-8 text-right">Production</th>
-                <th className="text-right text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-8 pr-12 w-40">Ops</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 text-slate-900">
-              {filteredUnits.map((unit) => (
-                <tr key={unit.id} className="group hover:bg-slate-50/20 transition-all">
-                  <td className="py-8 px-10">
-                    <div className="flex items-start gap-6">
-                        {/* 状态大图标 */}
-                        <div className={cn(
-                            "w-12 h-12 rounded-2xl border-2 flex items-center justify-center transition-all shrink-0 shadow-sm",
-                            unit.status === 1 ? "border-yellow-100 bg-yellow-50 text-yellow-600" : "border-slate-100 bg-slate-50 text-slate-300"
-                        )}>
-                            <Layers size={22} />
-                        </div>
-
-                        <div className="flex flex-col space-y-3">
-                            {/* 主 ID 卡片样式 */}
-                            <div className="bg-slate-900 text-white px-4 py-2 rounded-lg inline-flex flex-col min-w-[200px] shadow-lg shadow-slate-200">
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">Master Machine ID</span>
-                                <span className="font-mono text-base font-black italic tracking-wider">{unit.shs_machine_id}</span>
-                            </div>
-                            
-                            {/* 子设备树状结构 */}
-                            <div className="relative pl-2 space-y-2">
-                                {[
-                                    { label: 'SOLAR PANEL', id: unit.solar_equipment_id },
-                                    { label: 'RADIO UNIT', id: unit.radio_id },
-                                    { label: 'FLASH TORCH', id: unit.flashlight_id },
-                                    { label: 'LED LIGHTS', id: unit.led_light_id }
-                                ].map((item, idx, arr) => (
-                                    <div key={item.label} className="relative flex items-center gap-3 pl-6 h-5">
-                                        {/* Tree Connectors (L-shape) */}
-                                        <div className="absolute left-0 top-[-10px] bottom-1/2 w-[2px] bg-slate-100" />
-                                        <div className="absolute left-0 top-1/2 w-4 h-[2px] bg-slate-100" />
-                                        {idx === arr.length - 1 && <div className="absolute left-0 top-1/2 bottom-0 w-[2px] bg-white" />}
-                                        
-                                        <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest w-20">{item.label}</span>
-                                        <span className="text-[10px] font-bold font-mono text-slate-900 bg-slate-50 px-2 py-0.5 rounded border border-slate-100 uppercase">{item.id}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                  </td>
-                  <td className="px-8 text-center">
-                    <div className="inline-flex flex-col gap-2 items-center">
-                      <div className="flex items-center gap-2 text-[11px] font-black uppercase italic">
-                         <Building2 size={13} className="text-slate-400" /> 
-                         {unit.customer_name === "-" ? <span className="text-slate-200">Unassigned</span> : unit.customer_name}
-                      </div>
-                      <div className="px-3 py-1 rounded-full bg-slate-50 text-[9px] text-slate-400 font-bold tracking-widest uppercase">
-                         {unit.city_name} • {unit.town_name}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-8 text-center">
-                    <div className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest shadow-sm",
-                      unit.status === 1 ? "bg-green-50 text-green-600 border-green-100" : "bg-slate-50 text-slate-400 border-slate-100"
-                    )}>
-                      {unit.status === 1 ? <Unlock size={12} strokeWidth={3} /> : <Lock size={12} strokeWidth={3} />}
-                      {unit.status === 1 ? "Active" : "Locked"}
-                    </div>
-                  </td>
-                  <td className="px-8 text-right font-mono text-[10px] font-black text-slate-400 italic">
-                    {unit.production_date?.split('T')[0]}
-                  </td>
-                  <td className="py-8 px-8 pr-12 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                        <button onClick={handleDevAlert} className="w-11 h-11 rounded-2xl border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:scale-90"><MapPin size={18} /></button>
-                        <button onClick={handleDevAlert} className="w-11 h-11 rounded-2xl border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-900 hover:text-white transition-all active:scale-90"><Lock size={18} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }

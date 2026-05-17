@@ -291,8 +291,8 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
                     <span className="text-[10px] font-bold text-slate-300 dark:text-slate-600">/ DAY</span>
                   </div>
                 </div>
-                <button onClick={() => handleRateEditClick(node)} className={`flex items-center justify-center gap-2 ${btnClass} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-slate-900 dark:text-slate-100 hover:bg-yellow-400 hover:border-yellow-400 dark:hover:bg-yellow-500 dark:hover:border-yellow-500 dark:hover:text-slate-900 transition-all shadow-sm cursor-pointer active:scale-95`}>
-                  <Settings2 size={14} className="text-slate-400" />
+                <button onClick={() => handleRateEditClick(node)} className={`flex items-center justify-center gap-2 ${btnClass} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-slate-900 dark:text-slate-100 hover:bg-primary hover:border-primary hover:text-white transition-all shadow-sm cursor-pointer active:scale-95`}>
+                  <Settings2 size={14} className="text-slate-400 group-hover:text-white" />
                   <span className="text-[10px] font-black uppercase tracking-widest">Adjust</span>
                 </button>
               </div>
@@ -301,8 +301,8 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <TableCell className={`${rowPadClass} text-right border-none pr-10`}>
               <div className="flex items-center justify-end gap-3">
                 {canAdd && (
-                  <button onClick={() => handleAddClick(node)} className={`flex items-center justify-center gap-2 ${btnClass} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-slate-900 dark:text-slate-100 hover:bg-yellow-400 hover:border-yellow-400 dark:hover:bg-yellow-500 dark:hover:border-yellow-500 dark:hover:text-slate-900 transition-all shadow-sm cursor-pointer active:scale-95`}>
-                    <Plus size={14} className="text-yellow-600 dark:text-yellow-500" />
+                  <button onClick={() => handleAddClick(node)} className={`flex items-center justify-center gap-2 ${btnClass} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full text-slate-900 dark:text-slate-100 hover:bg-primary hover:border-primary hover:text-white transition-all shadow-sm cursor-pointer active:scale-95`}>
+                    <Plus size={14} className="text-primary group-hover:text-white" />
                     <span className="text-[10px] font-black uppercase tracking-widest">{node.level === 0 ? "Add City" : "Add Town"}</span>
                   </button>
                 )}
@@ -322,9 +322,9 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
   return (
     <>
       {/* 全局费率设置区域 (Global Rate Settings) */}
-      <div className={`flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900/60 rounded-[2rem] border border-slate-50 dark:border-slate-800/50 shadow-sm ${isCompact ? 'p-4 mb-4' : 'p-6 mb-6'}`}>
+      <div className={`flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-50 dark:border-slate-800/50 shadow-sm ${isCompact ? 'p-4 mb-4' : 'p-6 mb-6'}`}>
         <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 shrink-0">
+          <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
             <Percent size={20} />
           </div>
           <div>
@@ -348,7 +348,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             type="button" 
             onClick={handleSyncAll}
             disabled={isSyncing}
-            className="flex items-center justify-center gap-2 h-12 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl shadow-lg hover:bg-yellow-400 dark:hover:bg-yellow-500 hover:text-slate-900 transition-all active:scale-95 font-black uppercase text-[10px] tracking-widest whitespace-nowrap disabled:opacity-50"
+            className="flex items-center justify-center gap-2 h-12 px-6 bg-primary text-white rounded-xl shadow-lg hover:opacity-90 transition-all active:scale-95 font-black uppercase text-[10px] tracking-widest whitespace-nowrap disabled:opacity-50"
           >
             {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
             <span>Sync All</span>
@@ -357,7 +357,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
       </div>
 
       {/* 列表容器 (Table Container) */}
-      <div className={`bg-white dark:bg-slate-900/60 rounded-[2rem] ${isCompact ? 'p-2' : 'p-4'} shadow-sm border border-slate-50 dark:border-slate-800/50 overflow-hidden`}>
+      <div className={`bg-white dark:bg-slate-900/60 rounded-2xl ${isCompact ? 'p-2' : 'p-4'} shadow-sm border border-slate-50 dark:border-slate-800/50 overflow-hidden`}>
         {loading ? (
           <div className={`${isCompact ? 'h-[350px]' : 'h-[600px]'} flex items-center justify-center`}><Loader2 className="w-10 h-10 text-slate-900 dark:text-slate-100 animate-spin" /></div>
         ) : (
@@ -388,7 +388,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <button 
               onClick={() => submitNewRegion('City')} 
               disabled={isSubmitting || !newName.trim()} 
-              className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-yellow-400 dark:hover:bg-yellow-500 hover:text-slate-900 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
+              className="w-full bg-primary text-white h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:opacity-90 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
             >
               {isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirm City'}
             </button>
@@ -413,7 +413,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <button 
               onClick={() => submitNewRegion('Town')} 
               disabled={isSubmitting || !newName.trim()} 
-              className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-yellow-400 dark:hover:bg-yellow-500 hover:text-slate-900 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
+              className="w-full bg-primary text-white h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:opacity-90 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
             >
               {isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Confirm Town'}
             </button>
@@ -438,7 +438,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <button 
               onClick={handleRenameSubmit} 
               disabled={isSubmitting} 
-              className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-yellow-400 dark:hover:bg-yellow-500 hover:text-slate-900 transition-all shadow-xl cursor-pointer active:scale-95"
+              className="w-full bg-primary text-white h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:opacity-90 transition-all shadow-xl cursor-pointer active:scale-95"
             >
               {isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Apply Changes'}
             </button>
@@ -463,7 +463,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <button 
               onClick={handleRenameSubmit} 
               disabled={isSubmitting || !newName.trim()} 
-              className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-yellow-400 dark:hover:bg-yellow-500 hover:text-slate-900 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
+              className="w-full bg-primary text-white h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:opacity-90 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
             >
               {isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Apply Changes'}
             </button>
@@ -501,7 +501,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <button 
               onClick={handleRateEditSubmit} 
               disabled={isSubmitting || !newName.trim()} 
-              className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-yellow-400 dark:hover:bg-yellow-500 hover:text-slate-900 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
+              className="w-full bg-primary text-white h-14 rounded-xl font-black uppercase text-xs tracking-widest hover:opacity-90 transition-all shadow-xl disabled:opacity-50 cursor-pointer active:scale-95"
             >
               {isSubmitting ? <Loader2 size={18} className="animate-spin mx-auto" /> : 'Apply Rate'}
             </button>

@@ -2,38 +2,37 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, Search, ChevronRight, Loader2, 
-  Construction, Package, CheckCircle2, 
-  AlertTriangle, MapPin, Trash2, FileDown
+  Plus, Search, Loader2,
+  Package, CheckCircle2,
+  AlertTriangle, MapPin, FileDown,
+  RefreshCcw, CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
-import Breadcrumbs from '@/components/Breadcrumbs'; // 根据你的实际路径修改
-
-/**
- * STATUS_MAP: 基于业务状态的视觉映射
- */
-const STATUS_MAP: Record<number, { label: string, color: string, activeColor: string, icon: React.ReactNode }> = {
+const STATUS_MAP: Record<number, { label: string, badgeVariant: string, icon: React.ReactNode }> = {
   0: { 
     label: 'IN STOCK', 
-    color: 'text-slate-400 border-transparent hover:text-slate-900', 
-    activeColor: 'bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-200',
+    badgeVariant: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
     icon: <Package size={12} /> 
   },
   1: { 
     label: 'ACTIVATED', 
-    color: 'text-slate-400 border-transparent hover:text-yellow-600', 
-    activeColor: 'bg-[#FFD700] text-slate-900 border-[#FFD700] shadow-md shadow-yellow-100',
+    badgeVariant: "bg-primary/10 text-primary border-primary/20",
     icon: <CheckCircle2 size={12} /> 
   },
   3: { 
     label: 'DAMAGED', 
-    color: 'text-slate-400 border-transparent hover:text-red-600', 
-    activeColor: 'bg-red-500 text-white border-red-500 shadow-md shadow-red-100',
+    badgeVariant: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
     icon: <AlertTriangle size={12} /> 
   }
 };
@@ -53,11 +52,10 @@ interface CardRecord {
 
 export default function CardsPage() {
   const [loading, setLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState(false); // 新增导出状态
+  const [isExporting, setIsExporting] = useState(false);
   const [cards, setCards] = useState<CardRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [showDevModal, setShowDevModal] = useState(false);
 
   const fetchCards = async () => {
     setLoading(true);
@@ -66,13 +64,12 @@ export default function CardsPage() {
       const data = Array.isArray(res.data) ? res.data : (res.data.items || []);
       setCards(data);
     } catch (err) {
-      toast.error("ASSET SYNC ERROR: Registry access denied.");
+      toast.error("ASSET SYNC ERROR: Card registry inaccessible.");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- 导出 Excel 函数 ---
   const handleExport = async () => {
     setIsExporting(true);
     try {
@@ -109,170 +106,131 @@ export default function CardsPage() {
   });
 
   return (
-    <div className="py-8 px-6 md:px-[60px] max-w-[1920px] mx-auto space-y-10 animate-in fade-in duration-700">
+    <div className="relative flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-[#f8fafc] dark:bg-slate-950">
       
-      {/* 1. Breadcrumbs */}
-      <Breadcrumbs
-        items={[
-          { label: 'IC Card' } 
-        ]}
-      />
-
-
-      {/* 2. Control Panel */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-4 rounded-[32px]">
-        <div className="flex items-center gap-6 flex-nowrap">
-          {/* Search Box */}
-          <div className="relative w-full lg:w-[480px] group">
-            <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-yellow-500 transition-colors" size={20} />
+      {/* 1. Top Header */}
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
+        <div className="flex items-center gap-8 flex-1">
+          <Breadcrumbs items={[{ label: "ic card assets" }]} />
+          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
             <input 
-              type="text"
-              placeholder="SEARCH ASSET BY SN / UUID..."
-              value={searchQuery}
+              type="text" placeholder="SEARCH BY CARD SN OR UUID..." value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-14 pr-6 h-[64px] bg-transparent border-b-2 border-slate-900 text-[11px] font-black uppercase tracking-[0.2em] outline-none transition-all text-slate-950 placeholder:text-slate-300"
+              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-950 dark:text-slate-100 placeholder:text-slate-400"
             />
           </div>
+        </div>
 
-          <div className="h-8 w-px bg-slate-100 hidden sm:block" />
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleExport} disabled={isExporting} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none">
+            {isExporting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <FileDown className="h-4 w-4 mr-2" />} Export
+          </Button>
+          <Button variant="outline" onClick={fetchCards} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none">
+            <RefreshCcw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} /> Refresh
+          </Button>
+          <Link href="/devices/card/create" passHref>
+            <Button asChild className="rounded-xl h-10 px-6 font-bold shadow-sm dark:shadow-none transition-all active:scale-95 uppercase text-[10px] tracking-widest">
+              <span><Plus className="h-4 w-4 mr-2" /> New Card</span>
+            </Button>
+          </Link>
+        </div>
+      </header>
 
-          {/* Status Selector */}
-          <div className="flex items-center h-[64px] gap-1">
-            <button 
-              onClick={() => setStatusFilter('all')}
-              className={cn(
-                "px-8 h-full rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
-                statusFilter === 'all' ? "bg-slate-900 text-white shadow-xl shadow-slate-200" : "text-slate-400 hover:text-slate-950 hover:bg-slate-50"
-              )}
-            >
-              ALL
-            </button>
+      {/* 2. Content Area */}
+      <div className="flex flex-1 overflow-hidden relative">
+        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800/50 bg-white/90 dark:bg-slate-950/50 backdrop-blur-xl p-5 flex flex-col gap-4 shrink-0 shadow-sm transition-colors">
+          <div className="space-y-2">
+            <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600 mb-2">Inventory Filter</h3>
+            <button onClick={() => setStatusFilter('all')} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-4 text-sm font-bold border", statusFilter === 'all' ? "bg-slate-900 text-white border-slate-900 shadow-xl dark:bg-white dark:text-slate-900 scale-[1.02]" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50")}><CreditCard className="h-4 w-4" /><span>Full Registry</span></button>
             {[0, 1, 3].map((sId) => (
-              <button 
-                key={sId}
-                onClick={() => setStatusFilter(sId.toString())}
-                className={cn(
-                  "flex items-center gap-3 px-6 h-full rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all",
-                  statusFilter === sId.toString() ? STATUS_MAP[sId].activeColor : "text-slate-400 hover:text-slate-950 hover:bg-slate-50"
-                )}
-              >
-                {STATUS_MAP[sId].icon}
+              <button key={sId} onClick={() => setStatusFilter(sId.toString())} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-1", statusFilter === sId.toString() ? "bg-primary text-white border-transparent" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50")}>
                 {STATUS_MAP[sId].label}
               </button>
             ))}
           </div>
-        </div>
+        </aside>
 
-        {/* 核心动作按钮 */}
-        <div className="flex items-center gap-4 h-[64px]">
-          <button 
-            onClick={handleExport}
-            disabled={isExporting}
-            className={cn(
-              "flex items-center justify-center w-16 h-full rounded-2xl border-2 border-slate-100 text-slate-400 transition-all active:scale-95",
-              isExporting ? "opacity-50" : "hover:text-slate-900 hover:border-slate-900"
-            )}
-          >
-            {isExporting ? <Loader2 className="animate-spin" size={22} /> : <FileDown size={22} />}
-          </button>
-          <Link href="/devices/card/create" passHref>
-                <button className="rounded-2xl h-12 px-8 font-bold shadow-lg transition-all active:scale-95">
-                    + New Card
-                </button>
-            </Link>
-        </div>
-      </div>
-
-      {/* 3. Main Registry Table */}
-      {loading ? (
-        <div className="h-[400px] flex flex-col items-center justify-center gap-4">
-          <Loader2 className="animate-spin text-yellow-400" size={40} />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Scanning RFID Registry...</span>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50">
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 py-6 px-8 leading-none text-center w-20">Type</th>
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 py-6 px-8 leading-none">Physical Identity</th>
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-8 leading-none">Ownership / Customer</th>
-                <th className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-8 leading-none text-center">Protocol Dates</th>
-                <th className="text-right text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 px-8 pr-12 leading-none">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 text-slate-900">
-              {filteredCards.map((card) => (
-                <tr key={card.id} className="group hover:bg-slate-50/30 transition-all">
-                  <td className="py-7 px-8 text-center">
-                    <div className={cn("inline-flex p-3 rounded-xl border border-slate-100", STATUS_MAP[card.status]?.color)}>
-                      {STATUS_MAP[card.status]?.icon}
-                    </div>
-                  </td>
-                  <td className="px-8">
-                    <div className="flex flex-col">
-                      <span className="font-black uppercase italic tracking-tighter text-base leading-tight">SN: {card.card_number}</span>
-                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 font-mono">UUID: {card.card_uuid}</span>
-                    </div>
-                  </td>
-                  <td className="px-8">
-                    {card.customer_name ? (
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter">
-                           <CheckCircle2 size={12} className="text-green-500 shadow-[0_0_8px_rgba(34,197,94,0.3)]" /> {card.customer_name}
-                        </div>
-                        <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold tracking-widest uppercase italic">
-                           <MapPin size={10} /> {card.city_name} / {card.town_name}
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-[9px] font-black text-slate-200 uppercase tracking-widest italic border border-slate-50 px-3 py-1 rounded-lg">Available in Stock</span>
+        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
+          <div className="max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
+                <Table>
+                  <TableHeader className="bg-transparent border-b border-slate-100 dark:border-white/5 transition-colors">
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableHead className="w-[8%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Type</TableHead>
+                      <TableHead className="w-[32%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Physical Identity</TableHead>
+                      <TableHead className="w-[30%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ownership / Customer</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Protocol Dates</TableHead>
+                      <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-[400px] text-center">
+                            <div className="flex flex-col items-center justify-center gap-4 text-slate-300 italic">
+                              <Loader2 className="animate-spin text-primary" size={40} />
+                              <span className="text-[10px] font-black uppercase tracking-[0.3em]">Scanning RFID Registry...</span>
+                            </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredCards.map((card) => (
+                      <TableRow key={card.id} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
+                        <TableCell className="py-7 px-8 text-center align-middle">
+                          <div className={cn("inline-flex p-3 rounded-xl border transition-all",
+                             card.status === 1 ? "bg-primary/5 border-primary/20 text-primary" : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400")}>
+                            {STATUS_MAP[card.status]?.icon || <CreditCard size={18} />}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-black uppercase italic tracking-tighter text-[15px] leading-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">SN: {card.card_number}</span>
+                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest font-mono">UUID: {card.card_uuid}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle">
+                          {card.customer_name ? (
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter text-slate-900 dark:text-slate-200">
+                                 <CheckCircle2 size={12} className="text-green-500" /> {card.customer_name}
+                              </div>
+                              <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-widest uppercase italic">
+                                 <MapPin size={10} /> {card.city_name} / {card.town_name}
+                              </div>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest italic border-slate-100 dark:border-slate-800 px-3 py-1">Available in Stock</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-8 text-center align-middle">
+                          <div className="inline-flex flex-col gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400 italic leading-none">
+                            <div className="flex items-center justify-center gap-2">IN: {card.created_at?.split('T')[0]}</div>
+                            {card.bound_at && <div className="flex items-center justify-center gap-2 text-primary font-bold underline underline-offset-2">OUT: {card.bound_at.split('T')[0]}</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-7 px-8 pr-8 text-right align-middle">
+                          <Button variant="ghost" size="icon" onClick={() => toast.info("PROTOCOL: Edit function locked.")} className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white rounded-lg h-9 w-9">
+                            <Plus className="rotate-45" size={16} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!loading && filteredCards.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-32 text-center">
+                          <div className="flex flex-col items-center gap-4 opacity-20">
+                            <Package size={48} strokeWidth={1} />
+                            <span className="text-[11px] font-black uppercase tracking-[0.4em]">No Inventory Matched</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </td>
-                  <td className="px-8 text-center">
-                    <div className="inline-flex flex-col gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400 italic leading-none">
-                      <div className="flex items-center gap-2">IN: {card.created_at?.split('T')[0]}</div>
-                      {card.bound_at && <div className="flex items-center gap-2 text-yellow-600 font-bold underline underline-offset-2">OUT: {card.bound_at.split('T')[0]}</div>}
-                    </div>
-                  </td>
-                  <td className="py-7 px-8 pr-12 text-right">
-                    <button onClick={() => toast.info("PROTOCAL: Edit function locked.")} className="w-10 h-10 rounded-xl border border-slate-100 inline-flex items-center justify-center text-slate-300 hover:bg-slate-900 hover:text-white transition-all shadow-sm active:scale-90">
-                      <Plus className="rotate-45" size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredCards.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={5} className="py-32 text-center">
-                    <div className="flex flex-col items-center gap-4 opacity-20">
-                      <Package size={48} strokeWidth={1} />
-                      <span className="text-[11px] font-black uppercase tracking-[0.4em]">No Inventory Matched</span>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* --- Dev Modal --- */}
-      <Dialog open={showDevModal} onOpenChange={setShowDevModal}>
-        <DialogContent className="max-w-[400px] rounded-2xl border-none bg-white p-0 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-          <div className="h-2 bg-yellow-400" />
-          <div className="p-10 flex flex-col items-center text-center space-y-6">
-            <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-900 ring-8 ring-slate-50/50">
-              <Construction size={40} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 leading-none">LOGISTICS LOCKED</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Asset entry is restricted during <br/>automated batch synchronization.</p>
-            </div>
-            <button onClick={() => setShowDevModal(false)} className="w-full h-14 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-yellow-400 hover:text-slate-900 transition-all shadow-xl">Confirm Registry Integrity</button>
+                  </TableBody>
+                </Table>
+            </Card>
           </div>
-        </DialogContent>
-      </Dialog>
+        </main>
+      </div>
     </div>
   );
 }

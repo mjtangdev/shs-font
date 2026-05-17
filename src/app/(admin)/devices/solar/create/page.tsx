@@ -91,7 +91,7 @@ export default function CreateSolarDevicePage() {
           <label 
             htmlFor="excel-upload"
             className={cn(
-              "group cursor-pointer bg-white border-2 border-dashed border-slate-200 rounded-[24px] p-10 transition-all hover:border-yellow-400 hover:bg-yellow-50/30 flex flex-col items-center justify-center gap-3",
+              "group cursor-pointer bg-white dark:bg-slate-900/60 border-2 border-dashed border-slate-200 rounded-[24px] p-10 transition-all hover:border-yellow-400 hover:bg-yellow-50/30 dark:hover:bg-yellow-500/10 flex flex-col items-center justify-center gap-3",
               loading && "opacity-50 cursor-not-allowed pointer-events-none"
             )}
           >
@@ -108,7 +108,7 @@ export default function CreateSolarDevicePage() {
         </div>
 
         {/* --- 2. 手动表单 --- */}
-        <div className="bg-white rounded-[32px] p-10 md:p-16 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900/60 rounded-[32px] p-10 md:p-16 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
           
           <div className="flex items-center gap-6 mb-16 border-b border-slate-50 pb-10">
             <div className="w-16 h-16 bg-slate-900 rounded-[20px] flex items-center justify-center shadow-2xl shadow-slate-300 text-yellow-400">
@@ -129,7 +129,7 @@ export default function CreateSolarDevicePage() {
               <input 
                 required 
                 placeholder="22222"
-                className="w-full h-20 pl-8 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-2xl focus:border-slate-900 focus:bg-white outline-none font-black text-2xl transition-all text-slate-900 font-mono shadow-inner" 
+                className="w-full h-20 pl-8 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-2xl focus:border-slate-900 focus:bg-white dark:focus:bg-slate-800 outline-none font-black text-2xl transition-all text-slate-900 font-mono shadow-inner" 
                 value={formData.shs_machine_id} 
                 onChange={(e) => setFormData({...formData, shs_machine_id: e.target.value})} 
               />
@@ -145,7 +145,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22223"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
                     value={formData.solar_equipment_id} 
                     onChange={(e) => setFormData({...formData, solar_equipment_id: e.target.value})} 
                   />
@@ -160,7 +160,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22224"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
                     value={formData.radio_id} 
                     onChange={(e) => setFormData({...formData, radio_id: e.target.value})} 
                   />
@@ -175,7 +175,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22225"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
                     value={formData.flashlight_id} 
                     onChange={(e) => setFormData({...formData, flashlight_id: e.target.value})} 
                   />
@@ -190,7 +190,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22226"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
                     value={formData.led_light_id} 
                     onChange={(e) => setFormData({...formData, led_light_id: e.target.value})} 
                   />
@@ -206,7 +206,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     type="date"
-                    className="w-full h-16 pl-6 pr-4 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900 group-hover:border-slate-200 uppercase" 
+                    className="w-full h-16 pl-6 pr-4 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 group-hover:border-slate-200 uppercase" 
                     value={formData.production_date} 
                     onChange={(e) => setFormData({...formData, production_date: e.target.value})} 
                   />

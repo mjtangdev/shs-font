@@ -23,7 +23,8 @@ export function Navbar() {
   const [openBasic, setOpenBasic] = useState(false);
   const [openUser, setOpenUser] = useState(false);
   const [openDevice, setOpenDevice] = useState(false);
-  
+  const [openFinance, setOpenFinance] = useState(false);
+
   const [role, setRole] = useState<number>(0);
   const [username, setUsername] = useState<string>("");
   const [mounted, setMounted] = useState(false);
@@ -167,11 +168,30 @@ export function Navbar() {
                 </DropdownMenu>
               </div>
 
-              {/* 4. Finance - 全员可见 (1, 2, 3) */}
-              <Link href="/finance" className={`${navItemStyles} ${pathname.includes('/finance') ? activeStyles : inactiveStyles}`}>
-                <Wallet size={19} />
-                <span>Finance</span>
-              </Link>
+              {/* 4. Finance - 对账权限控制：ADMIN(0,1) 或 FINANCE(3) */}
+              {(IS_ADMIN || IS_FINANCE) ? (
+                <div onMouseEnter={() => setOpenFinance(true)} onMouseLeave={() => setOpenFinance(false)}>
+                  <DropdownMenu open={openFinance} onOpenChange={setOpenFinance}>
+                    <DropdownMenuTrigger asChild>
+                      <button className={`outline-none ${navItemStyles} ${pathname.includes('/finance') ? activeStyles : inactiveStyles}`}>
+                        <Wallet size={19} />
+                        <span>Finance</span>
+                        <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openFinance ? 'rotate-180' : ''}`} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
+                      <DropdownMenuItem asChild className="p-0"><Link href="/finance" className={dropdownItemStyles}><Wallet size={16}/> Transactions</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/finance/reconcile" className={dropdownItemStyles}><Monitor size={16}/> Reconciliation</Link></DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ) : IS_OPERATOR ? (
+                /* Operator 只能看到交易流水链接，不能看到对账 */
+                <Link href="/finance" className={`${navItemStyles} ${pathname === '/finance' ? activeStyles : inactiveStyles}`}>
+                  <Wallet size={19} />
+                  <span>Finance</span>
+                </Link>
+              ) : null}
             </>
           )}
         </div>

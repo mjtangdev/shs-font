@@ -198,7 +198,7 @@ export default function EditEntityPage() {
                   onClick={() => setFormData({...formData, entity_type: t.id})}
                   className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
-                    formData.entity_type === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-500'
+                    formData.entity_type === t.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-500'
                   )}
                 >
                   <t.icon size={14} /> {t.label}
@@ -216,7 +216,7 @@ export default function EditEntityPage() {
               </label>
               <input 
                 required
-                className="w-full bg-transparent border-b-2 border-slate-100 py-4 text-xl font-black uppercase italic tracking-tight outline-none focus:border-yellow-400 transition-all text-slate-900"
+                className="w-full bg-transparent border-b-2 border-slate-100 py-4 text-xl font-black uppercase italic tracking-tight outline-none focus:border-yellow-400 transition-all text-slate-900 dark:text-slate-100"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
@@ -235,12 +235,12 @@ export default function EditEntityPage() {
                     <ChevronDown size={24} className="text-slate-300 group-hover:text-slate-900" />
                   </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white outline-none">
-                  <DialogHeader className="p-10 bg-white border-b border-slate-50">
+                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
+                  <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
                     <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Select Region</DialogTitle>
                     <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
                   </DialogHeader>
-                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white">
+                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
                     {fetchingRegions ? <Loader2 className="animate-spin text-yellow-400 mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
                   </div>
                 </DialogContent>
@@ -253,7 +253,7 @@ export default function EditEntityPage() {
               </label>
               <input 
                 required
-                className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-sm font-bold uppercase tracking-widest outline-none focus:border-yellow-400 transition-all text-slate-900"
+                className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-sm font-bold uppercase tracking-widest outline-none focus:border-yellow-400 transition-all text-slate-900 dark:text-slate-100"
                 value={formData.address}
                 onChange={(e) => setFormData({...formData, address: e.target.value})}
               />

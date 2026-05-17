@@ -187,13 +187,13 @@ export default function CreateCustomerPage() {
         />
         
         {/* Assigned Region */}
-        <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-100">
+        <div className="bg-white dark:bg-slate-900/60 rounded-xl p-8 shadow-sm border border-slate-100">
           <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1 mb-4 block">Deployment Region</label>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <button type="button" className="w-full h-20 px-8 border-2 border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between group hover:border-yellow-400 transition-all text-left shadow-sm">
                 <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-200 group-hover:border-yellow-200 transition-all">
+                  <div className="w-12 h-12 bg-white dark:bg-slate-900/60 rounded-xl flex items-center justify-center border border-slate-200 group-hover:border-yellow-200 transition-all">
                     <Globe className={cn(formData.region_id ? "text-yellow-500" : "text-slate-300")} size={24} />
                   </div>
                   <span className={cn("text-[20px] font-black italic uppercase", formData.region_id ? "text-slate-900" : "text-slate-300")}>
@@ -203,8 +203,8 @@ export default function CreateCustomerPage() {
                 <ChevronDown size={28} className="text-slate-300 group-hover:text-slate-900" />
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white outline-none">
-              <DialogHeader className="p-10 bg-white border-b border-slate-50">
+            <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
+              <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
                 <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Regional Deployment</DialogTitle>
                 <DialogDescription className="hidden">Select a node from the regional organization tree.</DialogDescription>
               </DialogHeader>
@@ -228,7 +228,7 @@ export default function CreateCustomerPage() {
           <label 
             htmlFor="excel-upload"
             className={cn(
-              "group cursor-pointer bg-white border-2 border-dashed border-slate-200 rounded-xl p-8 transition-all hover:border-yellow-400 hover:bg-yellow-50/30 flex flex-col items-center justify-center gap-3",
+              "group cursor-pointer bg-white dark:bg-slate-900/60 border-2 border-dashed border-slate-200 rounded-xl p-8 transition-all hover:border-yellow-400 hover:bg-yellow-50/30 dark:hover:bg-yellow-500/10 flex flex-col items-center justify-center gap-3",
               loading && "opacity-50 cursor-not-allowed pointer-events-none"
             )}
           >
@@ -245,7 +245,7 @@ export default function CreateCustomerPage() {
         </div>
 
         {/* 手动表单 */}
-        <div className="bg-white rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
+        <div className="bg-white dark:bg-slate-900/60 rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
           <div className="flex items-center gap-4 mb-12 border-b border-slate-50 pb-8">
             <div className="w-12 h-12 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-200 text-slate-900">
               <UserCircle2 size={24} />
@@ -257,11 +257,11 @@ export default function CreateCustomerPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">First Name</label>
-                <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} />
+                <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100" value={formData.first_name} onChange={(e) => setFormData({...formData, first_name: e.target.value})} />
               </div>
               <div className="space-y-3">
                 <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Last Name</label>
-                <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} />
+                <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100" value={formData.last_name} onChange={(e) => setFormData({...formData, last_name: e.target.value})} />
               </div>
             </div>
 
@@ -270,7 +270,7 @@ export default function CreateCustomerPage() {
                 <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Gender</label>
                 <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 h-16">
                   {['male', 'female'].map((g) => (
-                    <button key={g} type="button" onClick={() => setFormData({...formData, gender: g})} className={cn("flex-1 flex items-center justify-center gap-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all", formData.gender === g ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-500')}>
+                    <button key={g} type="button" onClick={() => setFormData({...formData, gender: g})} className={cn("flex-1 flex items-center justify-center gap-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all", formData.gender === g ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-500')}>
                       {g}
                     </button>
                   ))}
@@ -278,7 +278,7 @@ export default function CreateCustomerPage() {
               </div>
               <div className="space-y-3">
                 <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Birthday</label>
-                <input type="date" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900" value={formData.birthday} onChange={(e) => setFormData({...formData, birthday: e.target.value})} />
+                <input type="date" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100" value={formData.birthday} onChange={(e) => setFormData({...formData, birthday: e.target.value})} />
               </div>
             </div>
 
@@ -287,14 +287,14 @@ export default function CreateCustomerPage() {
                 <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Mobile Number</label>
                 <div className="relative">
                   <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                  <input required className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900" value={formData.mobile} onChange={(e) => setFormData({...formData, mobile: e.target.value})} />
+                  <input required className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100" value={formData.mobile} onChange={(e) => setFormData({...formData, mobile: e.target.value})} />
                 </div>
               </div>
               <div className="space-y-3">
                 <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                  <input type="email" className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
+                  <input type="email" className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
                 </div>
               </div>
             </div>
@@ -303,7 +303,7 @@ export default function CreateCustomerPage() {
               <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Full Address</label>
               <div className="relative">
                 <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <input required className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white outline-none font-bold text-lg transition-all text-slate-900" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
+                <input required className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
               </div>
             </div>
 

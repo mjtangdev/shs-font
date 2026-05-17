@@ -101,7 +101,39 @@
   --foreground: oklch(0.145 0 0);
 }
 
-
+.dark {
+  --background: oklch(0.13 0.01 280); /* 对应参考图的极深背底色 */
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.17 0.01 280); /* 卡片颜色略微抬升，体现层级 */
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.17 0.01 280);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.65 0.25 300); /* 参考图中的霓虹紫 */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.75 0.2 150); /* 参考图中的亮绿色 */
+  --secondary-foreground: oklch(0.13 0.01 280);
+  --muted: oklch(0.22 0.01 280);
+  --muted-foreground: oklch(0.55 0.01 280); /* 辅助文字调低对比度 */
+  --accent: oklch(0.25 0.02 280);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.6 0.25 25);
+  --border: oklch(1 0 0 / 8%); /* 边框极其克制 */
+  --input: oklch(1 0 0 / 8%);
+  --ring: oklch(0.65 0.25 300);
+  --chart-1: oklch(0.65 0.25 300); /* 紫色 */
+  --chart-2: oklch(0.75 0.2 150);  /* 绿色 */
+  --chart-3: oklch(0.8 0.18 60);   /* 橙黄 */
+  --chart-4: oklch(0.7 0.15 220);  /* 蓝色 */
+  --chart-5: oklch(0.65 0.2 10);
+  --sidebar: oklch(0.13 0.01 280);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.65 0.25 300);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.17 0.01 280);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.65 0.25 300);
+}
 
 @layer base {
   * {
@@ -112,5 +144,24 @@
   }
   html {
     @apply font-sans;
+  }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+  textarea,
+  select {
+    @apply text-foreground;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted-foreground;
+  }
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
+    transition: background-color 9999s ease-out 0s;
   }
 }

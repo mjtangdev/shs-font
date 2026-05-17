@@ -122,7 +122,7 @@ export default function SetupPage() {
         
         {/* 标题和步骤进度器 */}
         <div className="text-center space-y-2 mb-6 mt-[30px]">
-          <h1 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-slate-900">
+          <h1 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">
             System Initialization
           </h1>
           <p className="text-xs font-medium text-slate-400 italic">
@@ -130,12 +130,12 @@ export default function SetupPage() {
           </p>
 
           <div className="flex items-center justify-center gap-4 mt-6">
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 1 ? 'border-yellow-400 bg-yellow-50 text-yellow-700' : 'border-slate-200 bg-slate-100 text-slate-400'}`}>
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 1 ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
               <span className="text-[12px] font-black">1</span>
               <span className="text-[10px] font-black uppercase tracking-widest">Org</span>
             </div>
-            <div className="w-8 h-[2px] bg-slate-200" />
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 2 ? 'border-yellow-400 bg-yellow-50 text-yellow-700' : 'border-transparent bg-slate-100 text-slate-400'}`}>
+            <div className="w-8 h-[2px] bg-slate-200 dark:bg-slate-700" />
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 2 ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' : 'border-transparent bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
               <span className="text-[12px] font-black">2</span>
               <span className="text-[10px] font-black uppercase tracking-widest">Regions</span>
             </div>
@@ -144,7 +144,7 @@ export default function SetupPage() {
 
         {/* 第一步：公司信息 */}
         {step === 1 && (
-          <form onSubmit={handleCompanySubmit} className="max-w-[650px] mx-auto w-full bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col animate-in slide-in-from-right-8 duration-500">
+          <form onSubmit={handleCompanySubmit} className="max-w-[650px] mx-auto w-full bg-white dark:bg-slate-900/60 rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col animate-in slide-in-from-right-8 duration-500">
             <div className="p-6 md:p-8 space-y-6">
               <div className="flex flex-col md:flex-row items-center gap-6 border-b border-slate-50 pb-6">
                 <div className="space-y-3">
@@ -181,8 +181,8 @@ export default function SetupPage() {
                 <div className="space-y-2 md:col-span-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Office Address</label><Input value={compAddress} onChange={e => setCompAddress(e.target.value)} className="h-12 w-full rounded-xl bg-slate-50/50 border-slate-100 px-4 font-bold text-sm" /></div>
               </div>
             </div>
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
-              <Button disabled={submitting} className="h-10 px-8 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black transition-all active:scale-95 gap-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-end gap-4">
+              <Button disabled={submitting} className="h-10 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black dark:hover:bg-yellow-400 dark:hover:text-slate-900 transition-all active:scale-95 gap-2">
                 {submitting ? <Loader2 className="animate-spin" /> : <>Next Step: Setup Regions <ArrowRight size={14}/></>}
               </Button>
             </div>
