@@ -44,13 +44,11 @@ export default function CreateUserPage() {
     first_name: '',
     last_name: '',
     password: '',
-    role: 3, // 1: Admin, 2: Finance, 3: Operator
+    role: 2, // 1: Admin, 2: Operator, 3: Finance
     mobile: '',
     email: '',
     position: 'Standard Member',
     province: 'Pangasinan',
-    city_id: 0,
-    town_id: 0,
     address: 'Default HQ',
     region_id: 0,
     region_name: '',
@@ -80,16 +78,19 @@ export default function CreateUserPage() {
   const handleUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 仅保留最基础的非空校验
+    // 基础非空校验
     if (!formData.username.trim()) return toast.error("Username is required");
     if (!formData.first_name.trim()) return toast.error("First name is required");
     if (!formData.last_name.trim()) return toast.error("Last name is required");
-    if (!formData.password) return toast.error("Password is required"); // 移除长度限制，仅判断是否存在
+    if (!formData.password) return toast.error("Password is required");
+    if (!formData.mobile.trim()) return toast.error("Mobile number is required");
+    if (!formData.email.trim()) return toast.error("Email address is required");
+    if (!formData.region_id) return toast.error("Please assign a regional node");
 
     setLoading(true);
 
     try {
-      // 对接接口: /user/
+      // 提交原始数据，后端现在强制校验格式
       await apiClient.post('/user/', formData);
 
       toast.success("User identity authorized and deployed successfully");
@@ -100,8 +101,17 @@ export default function CreateUserPage() {
 
     } catch (err: any) {
       console.error("Submission failed:", err);
-      const errorDetail = err.response?.data?.detail || "System registration failed";
-      toast.error(errorDetail);
+      // 优化错误处理，避免直接渲染对象导致崩溃
+      const errorData = err.response?.data?.detail;
+      let errorMsg = "System registration failed";
+
+      if (Array.isArray(errorData)) {
+        errorMsg = errorData[0]?.msg || errorMsg;
+      } else if (typeof errorData === 'string') {
+        errorMsg = errorData;
+      }
+
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -111,23 +121,33 @@ export default function CreateUserPage() {
     return nodes.map(node => {
       const isExpanded = expandedIds.includes(node.id);
       const hasChildren = node.children && node.children.length > 0;
-      if (node.level === 0) return renderTreeRows(node.children, node.name);
+      const isMunicipality = node.level === 0;
+
+      if (isMunicipality) return renderTreeRows(node.children, node.name);
+
       const isSelected = formData.region_id === node.id;
+
+      const getLevelLabel = (level: number) => {
+        if (level === 0) return "Municipality";
+        if (level === 1) return "Barangay";
+        return "Purok";
+      };
 
       return (
         <div key={node.id} className="select-none">
-          <div 
+          <div
             onClick={() => {
               setFormData({
-                ...formData, 
-                region_id: node.id, 
+                ...formData,
+                region_id: node.id,
                 region_name: node.level === 1 ? node.name : `${parentName} > ${node.name}`
               });
               setIsDialogOpen(false);
             }}
+            title={getLevelLabel(node.level)}
             className={cn(
               "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent cursor-pointer",
-              isSelected ? "bg-yellow-50 border-yellow-400" : "hover:bg-slate-50 border-slate-50"
+              isSelected ? "bg-primary/10 border-primary" : "hover:bg-slate-50 border-slate-50"
             )}
             style={{ marginLeft: `${(node.level - 1) * 20}px` }}
           >
@@ -143,14 +163,19 @@ export default function CreateUserPage() {
                   </button>
                 )}
               </div>
-              <span className={cn(
-                "text-[18px] font-bold tracking-tight text-slate-900",
-                isSelected && "text-yellow-600"
-              )}>
-                {node.name}
-              </span>
+              <div className="flex flex-col text-left">
+                <span className={cn(
+                  "text-[18px] font-bold tracking-tight text-slate-900",
+                  isSelected && "text-primary"
+                )}>
+                  {node.name}
+                </span>
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mt-1">
+                  {getLevelLabel(node.level)}
+                </span>
+              </div>
             </div>
-            {isSelected && <CheckCircle2 size={26} className="text-yellow-500 animate-in zoom-in" />}
+            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in" />}
           </div>
           {hasChildren && isExpanded && renderTreeRows(node.children, node.name)}
         </div>
@@ -159,7 +184,7 @@ export default function CreateUserPage() {
   };
 
   const labelStyles = "text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1";
-  const inputStyles = "w-full h-16 px-6 border-2 border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground placeholder:text-muted-foreground";
+  const inputStyles = "w-full h-16 px-6 border-2 border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground placeholder:text-muted-foreground";
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-transparent py-12 px-6 tracking-tighter transition-colors">
@@ -168,7 +193,7 @@ export default function CreateUserPage() {
         {/* 面包屑导航 */}
         <Breadcrumbs
           items={[
-            { label: 'team', href: '/tesm' },
+            { label: 'team', href: '/users' },
             { label: 'Create teammate' } 
           ]}
         />
@@ -186,11 +211,11 @@ export default function CreateUserPage() {
             </div>
 
             {/* 精致型 Tab 切换器 */}
-            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-fit">
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 w-fit">
               {[
                 { id: 1, label: 'Admin' },
-                { id: 2, label: 'Finance' },
-                { id: 3, label: 'Operator' }
+                { id: 2, label: 'Operator' },
+                { id: 3, label: 'Finance' }
               ].map((r) => (
                 <button
                   key={r.id}
@@ -201,7 +226,7 @@ export default function CreateUserPage() {
                     formData.role === r.id ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-500'
                   )}
                 >
-                  {formData.role === r.id && <ShieldCheck size={12} className="text-yellow-500" />}
+                  {formData.role === r.id && <ShieldCheck size={12} className="text-primary" />}
                   {r.label}
                 </button>
               ))}
@@ -266,7 +291,7 @@ export default function CreateUserPage() {
               <label className={labelStyles}>Assigned Region *</label>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <button type="button" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between group hover:border-slate-400 focus:border-yellow-400 transition-all text-left">
+                  <button type="button" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between group hover:border-slate-400 focus:border-primary transition-all text-left">
                     <span className={cn("text-lg font-bold", formData.region_id ? "text-slate-900" : "text-slate-300 italic")}>
                       {formData.region_name || "Assign regional node..."}
                     </span>
@@ -279,18 +304,19 @@ export default function CreateUserPage() {
                     <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
                   </DialogHeader>
                   <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
-                    {fetchingRegions ? <Loader2 className="animate-spin text-yellow-400 mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
+                    {fetchingRegions ? <Loader2 className="animate-spin text-primary mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
                   </div>
                 </DialogContent>
               </Dialog>
             </div>
 
-            {/* 联系信息（可选） */}
+            {/* 联系信息（必填） */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50 dark:border-slate-800/50">
               <div className="space-y-3">
-                <label className={labelStyles}>Mobile Number</label>
+                <label className={labelStyles}>Mobile Number *</label>
                 <div className="relative">
                   <input 
+                    required
                     className={inputStyles}
                     placeholder="+63 000 000 0000"
                     value={formData.mobile}
@@ -300,9 +326,10 @@ export default function CreateUserPage() {
                 </div>
               </div>
               <div className="space-y-3">
-                <label className={labelStyles}>Official Email</label>
+                <label className={labelStyles}>Official Email *</label>
                 <div className="relative">
                   <input 
+                    required
                     type="email"
                     className={inputStyles}
                     placeholder="user@system.com"
@@ -318,15 +345,15 @@ export default function CreateUserPage() {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full h-20 bg-slate-900 text-white rounded-xl font-black uppercase text-lg shadow-xl shadow-slate-200 active:scale-[0.98] hover:bg-yellow-400 hover:text-slate-900 transition-all flex items-center justify-center gap-4 mt-6 disabled:opacity-50"
+              className="w-full h-20 bg-slate-900 text-white rounded-xl font-black uppercase text-lg shadow-xl shadow-slate-200 active:scale-[0.98] hover:bg-primary hover:text-slate-950 transition-all flex items-center justify-center gap-4 mt-6 disabled:opacity-50"
             >
               {loading ? (
                 <div className="flex items-center gap-3">
-                  <Loader2 className="animate-spin" size={24} />
+                  <Loader2 className="animate-spin text-primary" size={24} />
                   <span>Provisioning...</span>
                 </div>
               ) : (
-                <>Authorize Deployment <CheckCircle2 size={24} className="text-yellow-400" /></>
+                <>Authorize Deployment <CheckCircle2 size={24} className="text-primary" /></>
               )}
             </button>
           </form>

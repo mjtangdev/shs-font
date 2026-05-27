@@ -13,28 +13,37 @@ import {
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { cn } from "@/lib/utils";
+import apiClient from "@/lib/axios";
+import { toast } from "sonner";
 
-// --- [Mock Data / 模拟数据] ---
-const revenueData = [
-  { date: '04-08', amount: 2400 }, { date: '04-09', amount: 1800 },
-  { date: '04-10', amount: 3200 }, { date: '04-11', amount: 2100 },
-  { date: '04-12', amount: 4500 }, { date: '04-13', amount: 3800 },
-  { date: '04-14', amount: 5200 },
-];
-
-const deviceDistData = [
-  { name: 'Active', value: 842 },
-  { name: 'Inactive', value: 120 },
-  { name: 'Maintenance', value: 45 },
-];
-
-const COLORS = ['oklch(0.65 0.25 300)', 'oklch(0.75 0.2 150)', 'oklch(0.45 0.05 280)'];
+const COLORS = ['#facc15', '#10b981', '#f43f5e']; // 黄, 绿, 红 (电力黄配色)
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    financial: {
+      total: 0,
+      today: 0,
+      growth: 0,
+      currency: "₱",
+      trend: [] as any[],
+      region_ranking: [] as any[]
+    },
+    devices: {
+      total: 0,
+      growth: 0,
+      distribution: [
+        { name: 'Active', value: 0 },
+        { name: 'In Stock', value: 0 },
+        { name: 'Damaged', value: 0 },
+      ]
+    },
+    users: { total: 0, growth: 0 }
+  });
 
   const getStoredSetupStatus = () => {
     if (typeof window === 'undefined') return { provider_config_set: true, rate_set: true, region_set: true };
@@ -46,12 +55,48 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchStats = async () => {
+    console.log("🚀 [Dashboard] fetchStats started...");
+    setLoading(true);
+    try {
+      const res = await apiClient.get("/dashboard/stats");
+      console.log("✅ [Dashboard] Stats Received:", res.data);
+      if (res.data) {
+        setStats(res.data);
+
+        // 如果拉到了真实数据，自动补全本地初始化标记，避免重复重定向
+        if (res.data.users.total > 0) {
+          localStorage.setItem('shs_setup_status', JSON.stringify({
+            provider_config_set: true,
+            rate_set: true,
+            region_set: true
+          }));
+          localStorage.setItem('setup_completed', 'true');
+          // 同时设置 cookie 以便中间件识别
+          document.cookie = "shs_setup_status=completed; path=/; max-age=31536000";
+        }
+      }
+    } catch (err: any) {
+      console.error("❌ [Dashboard] Fetch Error:", err.message);
+      toast.error("Failed to sync dashboard data");
+    } finally {
+      setLoading(false);
+      console.log("🏁 [Dashboard] fetchStats finished.");
+    }
+  };
+
   useEffect(() => {
+    console.log("🖥️ [Dashboard] Component Mounted");
+
+    // 1. 先尝试获取数据，不再直接重定向
+    fetchStats();
+
+    // 2. 检查本地状态，如果接口拉取失败或确实为空，才考虑重定向
     const status = getStoredSetupStatus();
     if (!status.provider_config_set || !status.rate_set || !status.region_set) {
-      router.push('/setup');
+       console.info("ℹ️ [Dashboard] Local setup flag missing. Waiting for API response...");
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="relative flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-[#f8fafc] dark:bg-slate-950">
@@ -60,11 +105,16 @@ export default function DashboardPage() {
       <header className="h-20 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors">
         <Breadcrumbs items={[{ label: 'executive dashboard' }]} />
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none transition-all active:scale-95">
+          <Button
+            variant="outline"
+            onClick={fetchStats}
+            disabled={loading}
+            className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none transition-all active:scale-95"
+          >
             <RefreshCcw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} /> Live Sync
           </Button>
           <Button className="rounded-xl h-10 px-6 font-bold shadow-sm dark:shadow-none transition-all active:scale-95 uppercase text-[10px] tracking-widest">
-            <Zap className="h-4 w-4 mr-2" /> Quick Action
+            <Zap className="h-4 w-4 mr-2" /> Load
           </Button>
         </div>
       </header>
@@ -76,10 +126,38 @@ export default function DashboardPage() {
           {/* --- [A. Stats Cards] --- */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { label: "Financial Total", value: "₱ 124,500", icon: Wallet, color: "text-primary", bg: "bg-primary/10", trend: "+12%" },
-              { label: "Active Devices", value: "842 Units", icon: Cpu, color: "text-green-500", bg: "bg-green-500/10", trend: "+5%" },
-              { label: "Registered Users", value: "1,240 Users", icon: Users, color: "text-blue-500", bg: "bg-blue-500/10", trend: "+8%" },
-              { label: "Security Level", value: "Admin Access", icon: ShieldCheck, color: "text-amber-500", bg: "bg-amber-500/10", trend: "Stable" },
+              {
+                label: "Today's Revenue",
+                value: `${stats.financial.currency} ${stats.financial.today.toLocaleString()}`,
+                icon: Wallet,
+                color: "text-primary",
+                bg: "bg-primary/10",
+                trend: `${stats.financial.growth > 0 ? '+' : ''}${stats.financial.growth}%`
+              },
+              {
+                label: "Active Devices",
+                value: `${stats.devices.total} Units`,
+                icon: Cpu,
+                color: "text-green-500",
+                bg: "bg-green-500/10",
+                trend: `${stats.devices.growth > 0 ? '+' : ''}${stats.devices.growth}%`
+              },
+              {
+                label: "Registered Users",
+                value: `${stats.users.total} Users`,
+                icon: Users,
+                color: "text-blue-500",
+                bg: "bg-blue-500/10",
+                trend: `${stats.users.growth > 0 ? '+' : ''}${stats.users.growth}%`
+              },
+              {
+                label: "All-time Revenue",
+                value: `${stats.financial.currency} ${stats.financial.total.toLocaleString()}`,
+                icon: ShieldCheck,
+                color: "text-primary",
+                bg: "bg-primary/10",
+                trend: "Cumulative"
+              },
             ].map((stat, i) => (
               <Card
                 key={i}
@@ -106,23 +184,23 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
             {/* Left: Financial Trend */}
-            <Card className="lg:col-span-8 bg-slate-900 dark:bg-slate-900/60 rounded-2xl p-10 h-[580px] border-none shadow-sm relative overflow-hidden group">
-              <div className="flex justify-between items-start mb-8 relative z-10">
+            <Card className="lg:col-span-8 bg-slate-900 dark:bg-slate-900/60 rounded-2xl p-8 h-[580px] border-none shadow-sm relative overflow-hidden group flex flex-col">
+              <div className="flex justify-between items-start mb-6 relative z-10 shrink-0">
                 <div>
-                  <h2 className="text-2xl font-black italic uppercase tracking-tight text-white dark:text-slate-100">Financial Audit</h2>
+                  <h2 className="text-xl font-black italic uppercase tracking-tight text-white dark:text-slate-100">Financial Audit</h2>
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Real-time revenue stream analysis</p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
-                    <BarChart3 size={24} />
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
+                    <BarChart3 size={20} />
                 </div>
               </div>
-              <div className="h-[400px] w-full">
+              <div className="flex-1 w-full min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={revenueData}>
+                  <AreaChart data={stats.financial.trend}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="oklch(0.65 0.25 300)" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="oklch(0.65 0.25 300)" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#facc15" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#facc15" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
@@ -130,64 +208,91 @@ export default function DashboardPage() {
                     <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} tick={{ fontWeight: 900 }} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '10px', fontWeight: 900 }}
-                      itemStyle={{ color: 'oklch(0.65 0.25 300)' }}
+                      itemStyle={{ color: '#facc15' }}
                       cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }}
                     />
-                    <Area type="monotone" dataKey="amount" stroke="oklch(0.65 0.25 300)" strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
+                    <Area type="monotone" dataKey="amount" stroke="#facc15" strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </Card>
 
-            {/* Right: Device Status & Config */}
-            <div className="lg:col-span-4 space-y-8">
-              <Card className="bg-white dark:bg-slate-900/60 border-none rounded-2xl p-8 h-[400px] shadow-sm flex flex-col hover:shadow-md transition-all duration-500">
-                 <div className="flex items-center justify-between mb-6">
+            {/* Right: Device Status & Regions */}
+            <div className="lg:col-span-4 flex flex-col gap-6 h-[580px]">
+              <Card className="bg-white dark:bg-slate-900/60 border-none rounded-2xl p-5 h-[280px] shadow-sm flex flex-col hover:shadow-md transition-all duration-500 shrink-0">
+                 <div className="flex items-center justify-between mb-2">
                     <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] italic">Network Health</h4>
                     <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                         <span className="text-[9px] font-black uppercase text-slate-400">Live</span>
                     </div>
                  </div>
-                 <div className="flex-1 w-full min-h-[220px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                 <div className="flex-1 w-full flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height={140}>
                       <PieChart>
                         <Pie
-                          data={deviceDistData}
-                          innerRadius={70}
-                          outerRadius={90}
-                          paddingAngle={8}
+                          data={stats.devices.distribution}
+                          innerRadius={45}
+                          outerRadius={65}
+                          paddingAngle={6}
                           dataKey="value"
                           stroke="none"
+                          isAnimationActive={true}
+                          animationBegin={0}
+                          animationDuration={1000}
                         >
-                          {deviceDistData.map((_, index) => (
-                            <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                          {stats.devices.distribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip contentStyle={{ borderRadius: '12px', fontSize: '10px', fontWeight: 900 }} />
+                        <Tooltip
+                          contentStyle={{ borderRadius: '12px', fontSize: '10px', fontWeight: 900, border: 'none', backgroundColor: '#0f172a', color: '#fff' }}
+                          itemStyle={{ color: '#fff' }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                  </div>
-                 <div className="grid grid-cols-3 gap-2 mt-6 pt-6 border-t border-slate-100 dark:border-white/5">
-                    {deviceDistData.map((d, i) => (
-                      <div key={i} className="text-center">
-                        <div className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate">{d.name}</div>
-                        <div className="text-lg font-black text-slate-900 dark:text-slate-100 italic tracking-tighter">{d.value}</div>
+                 <div className="grid grid-cols-3 gap-1 mt-2 pt-4 border-t border-slate-100 dark:border-white/5">
+                    {stats.devices.distribution.map((d, i) => (
+                      <div key={i} className="text-center min-w-0">
+                        <div className="text-[7px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter truncate mb-0.5">
+                          {d.name}
+                        </div>
+                        <div className="text-sm font-black text-slate-900 dark:text-slate-100 italic tracking-tighter tabular-nums truncate">
+                          {d.value.toLocaleString()}
+                        </div>
                       </div>
                     ))}
                  </div>
               </Card>
 
-              {/* Quick Config Link / Style consistency */}
-              <Card className="bg-primary rounded-2xl p-8 flex flex-col justify-between h-[152px] border-none shadow-lg shadow-primary/20 group cursor-pointer transition-all hover:scale-[1.02]">
-                <div className="flex justify-between items-start">
-                    <h2 className="text-white text-xl font-black italic uppercase leading-none tracking-tight">System<br/>Calibration</h2>
-                    <Zap className="text-white/50 group-hover:text-white transition-colors" />
+              {/* --- [Top Performing Regions] --- */}
+              <Card className="bg-white dark:bg-slate-900/60 border-none rounded-2xl p-6 shadow-sm flex flex-col hover:shadow-md transition-all duration-500 flex-1 min-h-0 overflow-hidden">
+                <div className="flex items-center justify-between mb-4 shrink-0">
+                  <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] italic">Top Regions by Revenue</h4>
+                  <TrendingUp size={14} className="text-primary" />
                 </div>
-                <div className="flex items-center justify-between">
-                    <span className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Adjust Network Parameters</span>
-                    <ArrowUpRight className="text-white" size={20} />
-                </div>
+                <ScrollArea className="flex-1 -mx-2 px-2">
+                  <div className="space-y-3 pb-2">
+                    {stats.financial.region_ranking.length > 0 ? (
+                      stats.financial.region_ranking.map((region: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 group hover:bg-primary transition-all duration-300">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-slate-900 dark:text-slate-100 group-hover:text-white transition-colors">{region.name}</span>
+                            <span className="text-[9px] font-bold text-slate-400 group-hover:text-white/70 transition-colors">{region.customers} Customers</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-black italic text-primary group-hover:text-white transition-colors">₱{region.revenue.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-10 text-center text-[10px] font-black uppercase text-slate-300 tracking-widest italic">
+                        No Regional Data Yet
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
               </Card>
             </div>
           </div>

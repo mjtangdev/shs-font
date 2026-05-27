@@ -90,12 +90,12 @@ export default function CreateCardPage() {
           <label 
             htmlFor="excel-upload"
             className={cn(
-              "group cursor-pointer bg-white dark:bg-slate-900/60 border-2 border-dashed border-slate-200 rounded-xl p-8 transition-all hover:border-yellow-400 hover:bg-yellow-50/30 dark:hover:bg-yellow-500/10 flex flex-col items-center justify-center gap-3",
+              "group cursor-pointer bg-white dark:bg-slate-900/60 border-2 border-dashed border-slate-200 rounded-xl p-8 transition-all hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center gap-3",
               loading && "opacity-50 cursor-not-allowed pointer-events-none"
             )}
           >
-            <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-all text-slate-400">
-              {loading ? <Loader2 className="animate-spin" size={28} /> : <FileSpreadsheet size={28} />}
+            <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-slate-400">
+              {loading ? <Loader2 className="animate-spin text-primary" size={28} /> : <FileSpreadsheet size={28} />}
             </div>
             <div className="text-center">
               <h4 className="text-lg font-black italic uppercase text-slate-900">Batch Import via Excel</h4>
@@ -109,7 +109,7 @@ export default function CreateCardPage() {
         {/* --- 2. 手动表单 - 1:1 还原内容区域 --- */}
         <div className="bg-white dark:bg-slate-900/60 rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
           <div className="flex items-center gap-4 mb-12 border-b border-slate-50 pb-8">
-            <div className="w-12 h-12 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-200 text-slate-900">
+            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 text-slate-900">
               <Zap size={24} />
             </div>
             <h2 className="text-2xl font-black italic uppercase text-slate-900 tracking-tighter">Card Specifications</h2>
@@ -124,7 +124,7 @@ export default function CreateCardPage() {
                   <Hash className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                   <input 
                     required 
-                    className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100" 
+                    className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100"
                     value={formData.card_number} 
                     onChange={(e) => setFormData({...formData, card_number: e.target.value})} 
                   />
@@ -136,7 +136,7 @@ export default function CreateCardPage() {
                   <Zap className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                   <input 
                     required 
-                    className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono" 
+                    className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono"
                     value={formData.card_uuid} 
                     onChange={(e) => setFormData({...formData, card_uuid: e.target.value})} 
                   />
@@ -148,7 +148,7 @@ export default function CreateCardPage() {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full h-20 bg-yellow-400 text-slate-900 rounded-xl font-black uppercase text-lg shadow-xl shadow-yellow-400/20 active:scale-[0.98] hover:bg-yellow-500 transition-all flex items-center justify-center gap-4 mt-6 disabled:opacity-50"
+              className="w-full h-20 bg-primary text-slate-950 rounded-xl font-black uppercase text-lg shadow-xl shadow-primary/20 active:scale-[0.98] hover:opacity-90 transition-all flex items-center justify-center gap-4 mt-6 disabled:opacity-50"
             >
               {loading ? <Loader2 className="animate-spin" size={24} /> : <>Register Asset <CheckCircle2 size={24} /></>}
             </button>

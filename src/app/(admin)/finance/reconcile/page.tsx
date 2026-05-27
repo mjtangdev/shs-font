@@ -301,7 +301,7 @@ export default function ReconcilePage() {
                                 <span className="text-[8px] font-bold text-red-500 uppercase">Pending: {pos.pending_amount.toLocaleString()}</span>
                            </div>
                         </TableCell>
-                        <TableCell className="px-8 align-middle text-right font-mono text-[10px] font-black text-slate-400 italic whitespace-nowrap">{pos.last_reconciled_at?.split('T')[0] || "NEVER"}</TableCell>
+                        <TableCell className="px-8 align-middle text-right font-mono text-[10px] font-black text-slate-400 italic whitespace-nowrap">{pos.last_reconciled_at?.split(' ')[0] || "NEVER"}</TableCell>
                         <TableCell className="py-5 px-8 pr-8 text-right align-middle whitespace-nowrap">
                           <Button
                             onClick={() => handleReconcileConfirm(pos.id)}

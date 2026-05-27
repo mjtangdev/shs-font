@@ -71,8 +71,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.8 0.18 90); /* 统一电力黄，在浅色模式下稍微加深一点对比度 */
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -108,8 +108,8 @@
   --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0.17 0.01 280);
   --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.65 0.25 300); /* 参考图中的霓虹紫 */
-  --primary-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.85 0.2 90); /* 电力黄 (Neon Yellow) */
+  --primary-foreground: oklch(0.13 0.01 280);
   --secondary: oklch(0.75 0.2 150); /* 参考图中的亮绿色 */
   --secondary-foreground: oklch(0.13 0.01 280);
   --muted: oklch(0.22 0.01 280);
@@ -119,8 +119,8 @@
   --destructive: oklch(0.6 0.25 25);
   --border: oklch(1 0 0 / 8%); /* 边框极其克制 */
   --input: oklch(1 0 0 / 8%);
-  --ring: oklch(0.65 0.25 300);
-  --chart-1: oklch(0.65 0.25 300); /* 紫色 */
+  --ring: oklch(0.85 0.2 90);
+  --chart-1: oklch(0.85 0.2 90); /* 黄色 */
   --chart-2: oklch(0.75 0.2 150);  /* 绿色 */
   --chart-3: oklch(0.8 0.18 60);   /* 橙黄 */
   --chart-4: oklch(0.7 0.15 220);  /* 蓝色 */
@@ -164,4 +164,13 @@
     caret-color: var(--foreground);
     transition: background-color 9999s ease-out 0s;
   }
+}
+
+/* 强制隐藏 Next.js 开发指示器 (如静态路由图标) */
+#nextjs-static-indicator-container,
+[data-nextjs-static-indicator],
+#next-route-announcer {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }

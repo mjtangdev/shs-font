@@ -16,10 +16,10 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import Cookies from 'js-cookie';
 
 const loginInputClass =
-  "w-full h-14 pl-12 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-2xl focus-visible:ring-1 focus-visible:ring-slate-950 dark:focus-visible:ring-yellow-400 transition-all text-lg text-foreground placeholder:text-muted-foreground";
+  "w-full h-14 pl-12 bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-2xl focus-visible:ring-1 focus-visible:ring-slate-950 dark:focus-visible:ring-primary transition-all text-lg text-foreground placeholder:text-muted-foreground";
 
 const loginInputIconClass =
-  "absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 z-10 group-focus-within:text-slate-950 dark:group-focus-within:text-yellow-400 transition-colors pointer-events-none";
+  "absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 z-10 group-focus-within:text-slate-950 dark:group-focus-within:text-primary transition-colors pointer-events-none";
 
 export default function SolarWhiteLoginPage() {
   const [username, setUsername] = useState("");
@@ -94,16 +94,10 @@ export default function SolarWhiteLoginPage() {
     setLoading(true);
 
     try {
-      // 1. 构建 FastAPI 要求的 Form Data 格式
-      const params = new URLSearchParams();
-      params.append('username', username);
-      params.append('password', password);
-
-      // 2. 发送请求 (请确保 apiClient 已配置 baseURL)
-      const { data } = await apiClient.post('/login/token', params.toString(), {
-        headers: { 
-          'Content-Type': 'application/x-www-form-urlencoded' 
-        }
+      // 使用 JSON 格式登录，更可靠且符合现代 SPA 实践
+      const { data } = await apiClient.post('/login/token-json', {
+        username: username,
+        password: password
       });
 
       console.log("Login API response data:", data); // 打印完整的后端响应数据
@@ -270,11 +264,11 @@ export default function SolarWhiteLoginPage() {
                 <Button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full h-14 bg-yellow-400 text-black border-none rounded-2xl font-black 
+                    className="w-full h-14 bg-primary text-slate-950 border-none rounded-2xl font-black
                             transition-all duration-300 
-                            hover:bg-black hover:text-white hover:cursor-pointer 
+                            hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 hover:cursor-pointer
                             active:scale-[0.98] 
-                            shadow-lg shadow-yellow-400/20 
+                            shadow-lg shadow-primary/20
                             flex items-center justify-center gap-2 group"
                 >
                     {loading ? (
@@ -306,7 +300,7 @@ export default function SolarWhiteLoginPage() {
           <div className="p-10">
               
               <div className="mb-8 text-center flex flex-col items-center">
-                <div className="w-12 h-12 bg-yellow-50 dark:bg-yellow-500/10 rounded-xl flex items-center justify-center text-yellow-600 dark:text-yellow-400 mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 border border-primary/20">
                   <Lock size={24} />
                 </div>
                 <h3 className="text-xl font-black text-slate-950 dark:text-slate-100 tracking-tight italic">Update Default Password</h3>
@@ -343,11 +337,11 @@ export default function SolarWhiteLoginPage() {
                   <Button 
                     type="submit"
                     disabled={updatingPassword}
-                    className="w-full h-14 bg-yellow-400 text-black border-none rounded-2xl font-black 
+                    className="w-full h-14 bg-primary text-slate-950 border-none rounded-2xl font-black
                             transition-all duration-300 
-                            hover:bg-black hover:text-white hover:cursor-pointer 
+                            hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 hover:cursor-pointer
                             active:scale-[0.98] 
-                            shadow-lg shadow-yellow-400/20 
+                            shadow-lg shadow-primary/20
                             flex items-center justify-center gap-2 group"
                   >
                     {updatingPassword ? <Loader2 className="animate-spin" size={24} /> : (

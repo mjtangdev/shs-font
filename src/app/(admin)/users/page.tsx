@@ -34,9 +34,9 @@ const ROLE_MAP: Record<number, { label: string, color: string, activeColor: stri
   2: { 
     label: 'OPERATOR',
     color: 'text-slate-400',
-    activeColor: 'bg-blue-600 text-white',
+    activeColor: 'bg-primary text-slate-950',
     icon: <Shield size={14} />,
-    badgeVariant: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400"
+    badgeVariant: "bg-primary/10 text-primary border-primary/20"
   },
   3: {
     label: 'FINANCE',
@@ -401,7 +401,7 @@ export default function UsersPage() {
                 Modification logic is currently locked <br/> for secure deployment phase.
               </p>
             </div>
-            <button onClick={() => setShowDevModal(false)} className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-primary dark:hover:bg-primary hover:text-white transition-all active:scale-95 shadow-xl dark:shadow-none">
+            <button onClick={() => setShowDevModal(false)} className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-primary dark:hover:bg-primary hover:text-slate-950 transition-all active:scale-95 shadow-xl dark:shadow-none">
               Confirm Awareness
             </button>
           </div>

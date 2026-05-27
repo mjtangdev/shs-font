@@ -16,6 +16,7 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 interface Entity {
   id: number;

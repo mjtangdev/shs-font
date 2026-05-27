@@ -101,7 +101,7 @@ export default function POSLogsPage() {
                                                 <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
                                                 <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest">
                                                     <Calendar size={12} />
-                                                    {new Date(log.timestamp).toLocaleString()}
+                                                    {new Date(log.timestamp.replace(' ', 'T')).toLocaleString()}
                                                 </div>
                                             </div>
 

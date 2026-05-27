@@ -124,7 +124,7 @@ export default function CreateEntityPage() {
             }}
             className={cn(
               "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent cursor-pointer",
-              isSelected ? "bg-yellow-50 border-yellow-400" : "hover:bg-slate-50 border-slate-50"
+              isSelected ? "bg-primary/10 border-primary" : "hover:bg-slate-50 border-slate-50"
             )}
             style={{ marginLeft: `${(node.level - 1) * 20}px` }}
           >
@@ -143,12 +143,12 @@ export default function CreateEntityPage() {
               <span className={cn(
                 "text-[18px] font-bold tracking-tight",
                 node.is_occupied ? 'text-slate-200' : 'text-slate-900',
-                isSelected && "text-yellow-600"
+                isSelected && "text-primary"
               )}>
                 {node.name}
               </span>
             </div>
-            {isSelected && <CheckCircle2 size={26} className="text-yellow-500 animate-in zoom-in" />}
+            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in" />}
           </div>
           {hasChildren && isExpanded && renderTreeRows(node.children, node.name)}
         </div>
@@ -170,7 +170,7 @@ export default function CreateEntityPage() {
         <div className="bg-white dark:bg-slate-900/60 rounded-xl p-10 md:p-14 shadow-sm border border-slate-100">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 border-b border-slate-50 pb-8">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-yellow-400 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-200 text-slate-900">
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 text-slate-900">
                 <Building2 size={24} />
               </div>
               <h2 className="text-2xl font-black italic uppercase text-slate-900 tracking-tighter">Entity Registration</h2>
@@ -199,14 +199,14 @@ export default function CreateEntityPage() {
           <form onSubmit={handleEntitySubmit} className="space-y-10">
             <div className="space-y-3">
               <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Entity Name</label>
-              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
             </div>
 
             <div className="space-y-3">
               <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Assigned Region</label>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <button type="button" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between group hover:border-slate-400 focus:border-yellow-400 transition-all text-left">
+                  <button type="button" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between group hover:border-slate-400 focus:border-primary transition-all text-left">
                     <span className={cn("text-lg font-bold", formData.region_id ? "text-slate-900" : "text-slate-300 italic")}>
                       {formData.region_name || "Assign regional node..."}
                     </span>
@@ -219,7 +219,7 @@ export default function CreateEntityPage() {
                     <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
                   </DialogHeader>
                   <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
-                    {fetchingRegions ? <Loader2 className="animate-spin text-yellow-400 mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
+                    {fetchingRegions ? <Loader2 className="animate-spin text-primary mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -227,10 +227,10 @@ export default function CreateEntityPage() {
 
             <div className="space-y-3">
               <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Physical Address</label>
-              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
+              <input required className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-foreground" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
             </div>
 
-            <button type="submit" disabled={loading} className="w-full h-20 bg-yellow-400 text-slate-900 rounded-xl font-black uppercase text-lg shadow-xl shadow-yellow-400/20 active:scale-[0.98] hover:bg-yellow-500 transition-all flex items-center justify-center gap-4 mt-6 disabled:opacity-50">
+            <button type="submit" disabled={loading} className="w-full h-20 bg-primary text-slate-950 rounded-xl font-black uppercase text-lg shadow-xl shadow-primary/20 active:scale-[0.98] hover:opacity-90 transition-all flex items-center justify-center gap-4 mt-6 disabled:opacity-50">
               {loading ? <Loader2 className="animate-spin" size={24} /> : <>Authorize Registration <CheckCircle2 size={24} /></>}
             </button>
           </form>
@@ -260,7 +260,7 @@ export default function CreateEntityPage() {
                   setIsSuccessDialogOpen(false);
                   resetForm();
                 }}
-                className="w-full h-14 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-yellow-400 hover:text-slate-900 transition-all active:scale-95"
+                className="w-full h-14 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-primary hover:text-slate-950 transition-all active:scale-95"
               >
                 Register Another
               </button>

@@ -32,7 +32,6 @@ const STATUS_MAP: Record<number, { label: string, badgeVariant: string }> = {
 };
 
 interface POSRecord {
-  id: number;
   pos_sn: string;
   status: number;
   lock_status: number;
@@ -173,7 +172,7 @@ export default function POSPage() {
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                     {filteredTerminals.map((pos) => (
-                      <TableRow key={pos.id} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
+                      <TableRow key={pos.pos_sn} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
                         <TableCell className="py-5 px-8 align-middle">
                           <div className="flex items-center gap-4 min-w-0">
                             <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center transition-all shrink-0", pos.status === 1 ? "border-primary/20 bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-400")}>
@@ -205,7 +204,7 @@ export default function POSPage() {
                                 )}
                            </div>
                         </TableCell>
-                        <TableCell className="px-8 align-middle text-right font-mono text-[10px] font-black text-slate-400 italic whitespace-nowrap">{pos.created_at?.split('T')[0]}</TableCell>
+                        <TableCell className="px-8 align-middle text-right font-mono text-[10px] font-black text-slate-400 italic whitespace-nowrap">{pos.created_at?.split(' ')[0]}</TableCell>
                         <TableCell className="py-5 px-8 pr-8 text-right align-middle whitespace-nowrap">
                           <div className="flex items-center justify-end gap-2">
                               <Link href={`/devices/pos/edit/${pos.pos_sn}`} passHref><Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white rounded-lg transition-all h-9 w-9"><Edit2 size={16} /></Button></Link>

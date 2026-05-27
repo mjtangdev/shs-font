@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // 1. 获取 Token (注意：中间件只能读取 Cookie，无法读取 LocalStorage)
   // Note: Middleware runs on server-side, it can only access Cookies.
   const token = request.cookies.get('shs_token')?.value;

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { 
   LogOut, LayoutDashboard, Settings, Zap, Users, 
   ChevronDown, UserSquare, UserCog, Wallet, 
-  Map, Building2, CreditCard, Tablet, Monitor
+  Map, Building2, CreditCard, Tablet, Monitor, ShieldAlert, FileSpreadsheet
 } from "lucide-react";
 import Link from "next/link"; 
 import { usePathname } from "next/navigation";
@@ -78,9 +78,9 @@ export function Navbar() {
   const IS_FINANCE = mounted && role === 3;
 
   const navItemStyles = "flex items-center justify-center gap-3 h-12 w-44 text-[15px] transition-all group rounded-xl cursor-pointer";
-  const activeStyles = "font-bold text-yellow-500 dark:text-yellow-400";
-  const inactiveStyles = "font-medium text-slate-500 dark:text-slate-400 hover:text-yellow-500 dark:hover:text-yellow-400";
-  const dropdownItemStyles = "flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-slate-600 dark:text-slate-300 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50/50 dark:hover:bg-yellow-500/10 rounded-lg transition-all cursor-pointer";
+  const activeStyles = "font-bold text-primary";
+  const inactiveStyles = "font-medium text-slate-500 dark:text-slate-400 hover:text-primary";
+  const dropdownItemStyles = "flex items-center gap-3 px-3.5 py-2.5 text-[13px] text-slate-600 dark:text-slate-300 hover:text-primary hover:bg-primary/10 rounded-lg transition-all cursor-pointer";
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-slate-100 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md transition-colors">
@@ -89,7 +89,7 @@ export function Navbar() {
         {/* Logo */}
         <div className="flex items-center min-w-[60px]">
           <Link href="/dashboard" className="group cursor-pointer">
-            <div className="bg-slate-900 dark:bg-slate-800 p-2.5 rounded-2xl text-white group-hover:bg-yellow-500 dark:group-hover:bg-yellow-400 transition-all duration-300">
+            <div className="bg-slate-900 dark:bg-slate-800 p-2.5 rounded-2xl text-white group-hover:bg-primary transition-all duration-300">
               <Zap size={22} fill="currentColor" />
             </div>
           </Link>
@@ -119,6 +119,7 @@ export function Navbar() {
                     <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
                       <DropdownMenuItem asChild className="p-0"><Link href="/settings/regions" className={dropdownItemStyles}><Map size={16}/> Regions</Link></DropdownMenuItem>
                       <DropdownMenuItem asChild className="p-0"><Link href="/settings/branches" className={dropdownItemStyles}><Building2 size={16}/> Branches</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/templates" className={dropdownItemStyles}><FileSpreadsheet size={16}/> Templates</Link></DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -181,6 +182,7 @@ export function Navbar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
                       <DropdownMenuItem asChild className="p-0"><Link href="/finance" className={dropdownItemStyles}><Wallet size={16}/> Transactions</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/finance/expired" className={dropdownItemStyles}><ShieldAlert size={16}/> Expired Accounts</Link></DropdownMenuItem>
                       <DropdownMenuItem asChild className="p-0"><Link href="/finance/reconcile" className={dropdownItemStyles}><Monitor size={16}/> Reconciliation</Link></DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -205,7 +207,7 @@ export function Navbar() {
             <span className="text-[15px] font-bold text-slate-900 dark:text-slate-100 leading-none">
               {mounted ? username : "---"}
             </span>
-            <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-yellow-600 mt-2 leading-none">
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-primary mt-2 leading-none">
               {mounted ? getRoleBadge(role) : "Checking..."}
             </span>
           </div>

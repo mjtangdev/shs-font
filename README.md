@@ -1,5 +1,16 @@
 # SHS - Solar Home System Frontend | 太阳能家庭系统前端
 
+> **Quick Docker Build (Cross-platform) | 快速跨平台打包命令**:
+> ```bash
+> # Build for Linux amd64 (Intel/AMD) from any platform
+> docker buildx build \
+> --platform linux/amd64 \
+> --build-arg NEXT_PUBLIC_API_URL=https://api.shstest.site/api/v1 \
+> -t mjtangdev/shs-frontend:latest \
+> --push \
+> .
+> ```
+
 A modern, high-performance web interface for managing Solar Home Systems, built with Next.js 16, React 19, and Tailwind CSS 4.
 一个基于 Next.js 16、React 19 和 Tailwind CSS 4 构建的现代化、高性能太阳能家庭系统管理界面。
 
@@ -71,7 +82,7 @@ npm run start
 - `src/app`: Next.js App Router pages and layouts (auth, admin, dashboard). | Next.js 页面与路由管理（认证、管理、仪表盘）。
 - `src/components`: Reusable UI components and business logic components. | 可复用的 UI 组件及业务逻辑组件。
 - `src/lib`: Utilities, API clients (Axios), and shared logic. | 工具类、API 客户端（Axios）和共享逻辑。
-- `src/middleware.ts`: Authentication and system initialization guard. | 身份验证与系统初始化状态守卫。
+- `src/proxy.ts`: Authentication and system initialization guard. | 身份验证与系统初始化状态守卫。
 - `public/`: Static assets such as images and fonts. | 静态资源，如图片和字体。
 
 ## 📄 License | 开源协议

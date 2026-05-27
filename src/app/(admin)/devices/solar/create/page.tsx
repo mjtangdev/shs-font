@@ -91,12 +91,12 @@ export default function CreateSolarDevicePage() {
           <label 
             htmlFor="excel-upload"
             className={cn(
-              "group cursor-pointer bg-white dark:bg-slate-900/60 border-2 border-dashed border-slate-200 rounded-[24px] p-10 transition-all hover:border-yellow-400 hover:bg-yellow-50/30 dark:hover:bg-yellow-500/10 flex flex-col items-center justify-center gap-3",
+              "group cursor-pointer bg-white dark:bg-slate-900/60 border-2 border-dashed border-slate-200 rounded-[24px] p-10 transition-all hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center gap-3",
               loading && "opacity-50 cursor-not-allowed pointer-events-none"
             )}
           >
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-yellow-400 group-hover:text-white transition-all text-slate-400 shadow-inner">
-              {loading ? <Loader2 className="animate-spin" size={32} /> : <FileSpreadsheet size={32} />}
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-slate-400 shadow-inner">
+              {loading ? <Loader2 className="animate-spin text-primary" size={32} /> : <FileSpreadsheet size={32} />}
             </div>
             <div className="text-center">
               <h4 className="text-xl font-black italic uppercase text-slate-900 tracking-tight">SHS Batch Manifest Import</h4>
@@ -111,7 +111,7 @@ export default function CreateSolarDevicePage() {
         <div className="bg-white dark:bg-slate-900/60 rounded-[32px] p-10 md:p-16 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
           
           <div className="flex items-center gap-6 mb-16 border-b border-slate-50 pb-10">
-            <div className="w-16 h-16 bg-slate-900 rounded-[20px] flex items-center justify-center shadow-2xl shadow-slate-300 text-yellow-400">
+            <div className="w-16 h-16 bg-slate-900 rounded-[20px] flex items-center justify-center shadow-2xl shadow-slate-300 text-primary">
               <Cpu size={32} />
             </div>
             <div className="flex flex-col">
@@ -124,7 +124,7 @@ export default function CreateSolarDevicePage() {
             
             <div className="space-y-4">
               <label className="text-[13px] font-black uppercase tracking-[0.25em] text-slate-400 ml-1 flex items-center gap-2">
-                <Hash size={14} className="text-yellow-500" /> Master Machine ID (SHS-SN)
+                <Hash size={14} className="text-primary" /> Master Machine ID (SHS-SN)
               </label>
               <input 
                 required 
@@ -145,7 +145,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22223"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200"
                     value={formData.solar_equipment_id} 
                     onChange={(e) => setFormData({...formData, solar_equipment_id: e.target.value})} 
                   />
@@ -160,7 +160,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22224"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200"
                     value={formData.radio_id} 
                     onChange={(e) => setFormData({...formData, radio_id: e.target.value})} 
                   />
@@ -175,7 +175,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22225"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200"
                     value={formData.flashlight_id} 
                     onChange={(e) => setFormData({...formData, flashlight_id: e.target.value})} 
                   />
@@ -190,7 +190,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     placeholder="22226"
-                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200" 
+                    className="w-full h-16 pl-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 font-mono group-hover:border-slate-200"
                     value={formData.led_light_id} 
                     onChange={(e) => setFormData({...formData, led_light_id: e.target.value})} 
                   />
@@ -206,7 +206,7 @@ export default function CreateSolarDevicePage() {
                   <input 
                     required 
                     type="date"
-                    className="w-full h-16 pl-6 pr-4 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-yellow-400 focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 group-hover:border-slate-200 uppercase" 
+                    className="w-full h-16 pl-6 pr-4 border-2 border-slate-100 bg-slate-50/50 rounded-xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 group-hover:border-slate-200 uppercase"
                     value={formData.production_date} 
                     onChange={(e) => setFormData({...formData, production_date: e.target.value})} 
                   />
@@ -218,7 +218,7 @@ export default function CreateSolarDevicePage() {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full h-24 bg-yellow-400 text-slate-900 rounded-[20px] font-black uppercase text-xl shadow-2xl shadow-yellow-400/30 active:scale-[0.97] hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center gap-6 mt-12 disabled:opacity-50 group"
+              className="w-full h-24 bg-primary text-slate-950 rounded-[20px] font-black uppercase text-xl shadow-2xl shadow-primary/20 active:scale-[0.97] hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center gap-6 mt-12 disabled:opacity-50 group"
             >
               {loading ? (
                 <Loader2 className="animate-spin" size={32} />

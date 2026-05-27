@@ -375,8 +375,8 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
       <Dialog open={isAddCityOpen} onOpenChange={setIsAddCityOpen}>
         <DialogContent className="sm:max-w-[440px] rounded-xl border-none shadow-2xl p-12 bg-white dark:bg-slate-900">
           <DialogHeader className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-blue-100 dark:border-blue-500/20">
-              <Building2 className="text-blue-600" size={28} />
+            <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-primary/20">
+              <Building2 className="text-primary" size={28} />
             </div>
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Add New Barangay</DialogTitle>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">Municipality: {targetParent?.name}</p>
@@ -400,8 +400,8 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
       <Dialog open={isAddTownOpen} onOpenChange={setIsAddTownOpen}>
         <DialogContent className="sm:max-w-[440px] rounded-xl border-none shadow-2xl p-12 bg-white dark:bg-slate-900">
           <DialogHeader className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-yellow-50 dark:bg-yellow-500/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-yellow-100 dark:border-yellow-500/20">
-              <MapPin className="text-yellow-600" size={28} />
+            <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-primary/20">
+              <MapPin className="text-primary" size={28} />
             </div>
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Add New Purok</DialogTitle>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">In Barangay: {targetParent?.name}</p>
@@ -425,8 +425,8 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
       <Dialog open={isRootEditOpen} onOpenChange={setIsRootEditOpen}>
         <DialogContent className="sm:max-w-[440px] rounded-xl border-none shadow-2xl p-12 bg-white dark:bg-slate-900">
           <DialogHeader className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-indigo-100 dark:border-indigo-500/20">
-              <Settings2 className="text-indigo-600" size={28} />
+            <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-primary/20">
+              <Settings2 className="text-primary" size={28} />
             </div>
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Update Municipality</DialogTitle>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">Modify Root Identity</p>
@@ -475,8 +475,8 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
       <Dialog open={isRateEditOpen} onOpenChange={setIsRateEditOpen}>
         <DialogContent className="sm:max-w-[440px] rounded-xl border-none shadow-2xl p-12 bg-white dark:bg-slate-900">
           <DialogHeader className="space-y-4 text-center">
-            <div className="w-16 h-16 bg-yellow-50 dark:bg-yellow-500/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-yellow-100 dark:border-yellow-500/20">
-              <Percent className="text-yellow-600" size={28} />
+            <div className="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2 border border-primary/20">
+              <Percent className="text-primary" size={28} />
             </div>
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Update Daily Rate</DialogTitle>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">Region: {targetParent?.name}</p>

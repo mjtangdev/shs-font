@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { 
   Search, Download, Wallet, TrendingUp, AlertCircle, 
   ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, XCircle,
-  MapPin, Calendar, ChevronDown, ChevronRight, Loader2,
-  Users, Home, Building2, RefreshCcw
+  MapPin, Calendar as CalendarIcon, ChevronDown, ChevronRight, ChevronLeft, Loader2,
+  Users, Home, Building2, RefreshCcw, Copy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import apiClient from '@/lib/axios';
@@ -17,6 +17,131 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+interface RegionData {
+  id: number;
+  name: string;
+  level: number;
+  children: RegionData[];
+  is_occupied: boolean;
+}
+
+// --- [INDUSTRIAL CALENDAR PICKER] ---
+const MONTHS_EN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+const DAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function IndustrialCalendarPicker({ value, onChange, placeholder }: { value: string, onChange: (val: string) => void, placeholder: string }) {
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState<'calendar' | 'years'>('calendar');
+
+  const now = useMemo(() => (value ? new Date(value) : new Date()), [value]);
+  const [currentViewDate, setCurrentViewDate] = useState(now);
+
+  const year = currentViewDate.getFullYear();
+  const month = currentViewDate.getMonth();
+
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+    const arr = [];
+    for (let i = firstDay - 1; i >= 0; i--) {
+      arr.push({ day: prevMonthDays - i, current: false, date: new Date(year, month - 1, prevMonthDays - i) });
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      arr.push({ day: i, current: true, date: new Date(year, month, i) });
+    }
+    const remaining = 42 - arr.length;
+    for (let i = 1; i <= remaining; i++) {
+      arr.push({ day: i, current: false, date: new Date(year, month + 1, i) });
+    }
+    return arr;
+  }, [year, month]);
+
+  const years = useMemo(() => {
+    const current = new Date().getFullYear();
+    return Array.from({ length: 50 }, (_, i) => (current + 5) - i);
+  }, []);
+
+  const handleSelect = (date: Date) => {
+    const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    onChange(formatted);
+    setOpen(false);
+  };
+
+  const getDisplayValue = (val: string) => {
+    if (!val) return placeholder;
+    const d = new Date(val);
+    return `${MONTHS_EN[d.getMonth()].substring(0, 3)} ${d.getDate()}, ${d.getFullYear()}`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button type="button" className="h-8 min-w-[130px] bg-slate-50 dark:bg-slate-950 px-3 rounded-lg border border-slate-100 dark:border-white/5 flex items-center justify-between gap-2 hover:border-primary transition-all outline-none">
+          <span className={cn("text-[10px] font-black uppercase tracking-tight", value ? "text-slate-900 dark:text-slate-100" : "text-slate-400")}>
+            {getDisplayValue(value)}
+          </span>
+          <CalendarIcon size={12} className={cn(value ? "text-primary" : "text-slate-400")} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 bg-white dark:bg-slate-950 border-none shadow-2xl rounded-[24px] overflow-hidden w-[300px] z-50" align="start">
+        <div className="bg-slate-900 p-4 border-b border-white/5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <button type="button" onClick={() => setView(view === 'years' ? 'calendar' : 'years')} className="text-[12px] font-black uppercase tracking-widest text-white hover:text-primary flex items-center gap-1 transition-colors">
+              {year} <ChevronDown size={12} className={cn("transition-transform", view === 'years' && "rotate-180")} />
+            </button>
+            <div className="flex items-center gap-1">
+               <button type="button" onClick={() => setCurrentViewDate(new Date(year, month - 1))} className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-white transition-all"><ChevronLeft size={14} /></button>
+               <button type="button" onClick={() => setCurrentViewDate(new Date(year, month + 1))} className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-white transition-all"><ChevronRight size={14} /></button>
+            </div>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+             {MONTHS_EN.map((m, idx) => (
+               <button key={m} type="button" onClick={() => { setCurrentViewDate(new Date(year, idx)); setView('calendar'); }} className={cn("px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all shrink-0", month === idx ? "bg-primary text-slate-950" : "bg-white/5 text-slate-500 hover:text-white")}>
+                 {m.substring(0, 3)}
+               </button>
+             ))}
+          </div>
+        </div>
+        <div className="p-3 relative min-h-[260px]">
+          {view === 'calendar' ? (
+            <div className="animate-in fade-in zoom-in-95 duration-200">
+               <div className="grid grid-cols-7 mb-1">
+                 {DAYS_EN.map(d => <div key={d} className="text-center text-[8px] font-black text-slate-500 uppercase py-1">{d}</div>)}
+               </div>
+               <div className="grid grid-cols-7 gap-0.5">
+                 {calendarDays.map((d, idx) => {
+                   const isSelected = value && new Date(value).toDateString() === d.date.toDateString();
+                   const isToday = new Date().toDateString() === d.date.toDateString();
+                   return (
+                     <button key={idx} type="button" onClick={() => handleSelect(d.date)} className={cn("h-8 w-8 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all", !d.current ? "text-slate-800 pointer-events-none opacity-10" : "text-slate-400 hover:bg-primary hover:text-slate-950", isSelected && "bg-primary text-slate-950 shadow-lg", isToday && !isSelected && "border border-primary/30 text-primary")}>
+                       {d.day}
+                     </button>
+                   );
+                 })}
+               </div>
+            </div>
+          ) : (
+            <div className="absolute inset-0 bg-slate-950 z-20 p-2 animate-in slide-in-from-top duration-300">
+              <ScrollArea className="h-[240px]">
+                <div className="grid grid-cols-3 gap-1 p-1">
+                  {years.map(y => (
+                    <button key={y} type="button" onClick={() => { setCurrentViewDate(new Date(y, month)); setView('calendar'); }} className={cn("py-2 rounded-lg text-[10px] font-black transition-all", year === y ? "bg-primary text-slate-950" : "bg-white/5 text-slate-500 hover:text-white")}>{y}</button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 interface RegionData {
   id: number;
@@ -85,10 +210,50 @@ export default function FinancePage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [quickFilter, setQuickFilter] = useState<string>("ALL");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  const [loading, setLoading] = useState(false);
   const [fetchingRegions, setFetchingRegions] = useState(true);
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
+
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [summary, setSummary] = useState({ total_amount: 0, total_days: 0, transaction_count: 0 });
+  const [isExporting, setIsExporting] = useState(false);
+
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const handleQuickFilter = (type: string) => {
+    setQuickFilter(type);
+    const now = new Date();
+    let start = "";
+    let end = formatDate(now);
+
+    if (type === 'TODAY') {
+      start = end;
+    } else if (type === 'WEEK') {
+      const day = now.getDay(); // 0 is Sun, 1 is Mon...
+      const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+      const monday = new Date(now.setDate(diff));
+      start = formatDate(monday);
+      end = formatDate(new Date()); // Reset end to today because now.setDate modified the object
+    } else if (type === 'MONTH') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      start = formatDate(firstDay);
+    } else if (type === 'ALL') {
+      start = "";
+      end = "";
+    }
+
+    setStartDate(start);
+    setEndDate(end);
+  };
 
   useEffect(() => {
     const fetchRegionData = async () => {
@@ -105,153 +270,226 @@ export default function FinancePage() {
     fetchRegionData();
   }, []);
 
-  const getStatusIcon = (status: string) => {
-    switch(status.toLowerCase()) {
-      case 'completed': return <CheckCircle2 size={12} className="mr-1" />;
-      case 'pending': return <Clock size={12} className="mr-1" />;
-      case 'failed': return <XCircle size={12} className="mr-1" />;
-      default: return null;
+  const fetchFinanceData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        region_id: selectedRegionId || undefined,
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
+        search: searchQuery || undefined,
+      };
+
+      const [txRes, sumRes] = await Promise.all([
+        apiClient.get('/finance/transactions', { params: { ...params, limit: 100 } }),
+        apiClient.get('/finance/summary', { params })
+      ]);
+
+      setTransactions(txRes.data.items || []);
+      setSummary(sumRes.data);
+    } catch (err) {
+      toast.error("Failed to sync financial ledger");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedRegionId, startDate, endDate, searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchFinanceData, 300);
+    return () => clearTimeout(timer);
+  }, [fetchFinanceData]);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    const toastId = toast.loading("Generating financial report...");
+    try {
+      const params = new URLSearchParams();
+      if (selectedRegionId) params.append('region_id', selectedRegionId.toString());
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      if (searchQuery) params.append('search', searchQuery);
+
+      const response = await apiClient.get(`/finance/export?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `SHS_Finance_Report_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Report downloaded successfully", { id: toastId });
+    } catch (err) {
+      toast.error("Failed to generate report", { id: toastId });
+    } finally {
+      setIsExporting(false);
     }
   };
 
-  const getStatusStyle = (status: string) => {
-    switch(status.toLowerCase()) {
-      case 'completed': return "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400";
-      case 'pending': return "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400";
-      case 'failed': return "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400";
-      default: return "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400";
-    }
+  const getStatusIcon = (action: string) => {
+    if (action === 'RECHARGE') return <CheckCircle2 size={12} className="mr-1" />;
+    return <Clock size={12} className="mr-1" />;
   };
 
-  const filteredTransactions = MOCK_TRANSACTIONS.filter(trx => {
-    const matchesSearch = trx.customer.toLowerCase().includes(searchQuery.toLowerCase()) || trx.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || trx.status.toUpperCase() === statusFilter;
-    
-    let matchesDate = true;
-    const trxDateStr = trx.date.split(' ')[0];
-    if (startDate && trxDateStr < startDate) matchesDate = false;
-    if (endDate && trxDateStr > endDate) matchesDate = false;
+  const getStatusStyle = (action: string) => {
+    if (action === 'RECHARGE') return "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400";
+    return "bg-primary/10 text-primary";
+  };
 
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  const stats = [
+    { label: "Total Revenue", value: `₱ ${summary.total_amount.toLocaleString()}`, trend: "Real-time", isPositive: true, color: "text-primary" },
+    { label: "Total Days Sold", value: `${summary.total_days.toLocaleString()} Days`, trend: "Lifetime", isPositive: true, color: "text-green-500" },
+    { label: "Transaction Volume", value: summary.transaction_count.toString(), trend: "Sync OK", isPositive: true, color: "text-primary" }
+  ];
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-[#f8fafc] dark:bg-slate-950">
+    <div className="relative flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-slate-50 dark:bg-slate-950">
       
       {/* 1. Top Header */}
-      <header className="h-20 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
         <div className="flex items-center gap-8 flex-1">
           <Breadcrumbs items={[{ label: 'finance' }]} />
-          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
             <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
             <input
               type="text" placeholder="SEARCH TRANSACTIONS OR CUSTOMERS..." value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-950 dark:text-slate-100 placeholder:text-slate-400"
+              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none transition-all active:scale-95">
-            <Download className="h-4 w-4 mr-2" /> Export Report
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none dark:border-slate-800 dark:text-slate-300 transition-all active:scale-95"
+          >
+            {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+            Export Report
           </Button>
-          <Button variant="outline" className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none transition-all active:scale-95">
-            <RefreshCcw className="h-4 w-4 mr-2" /> Refresh
+          <Button
+            variant="outline"
+            onClick={fetchFinanceData}
+            disabled={loading}
+            className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none dark:border-slate-800 dark:text-slate-300 transition-all active:scale-95"
+          >
+            <RefreshCcw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} /> Refresh
           </Button>
         </div>
       </header>
 
       {/* 2. Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800/50 bg-white/90 dark:bg-slate-950/50 backdrop-blur-xl p-5 flex flex-col gap-6 shrink-0 shadow-sm transition-colors">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600">Regional Filter</h3>
-              <button
-                onClick={() => setSelectedRegionId(null)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border",
-                  selectedRegionId === null
-                    ? "bg-slate-900 text-white border-slate-900 shadow-xl dark:bg-white dark:text-slate-900 dark:border-white scale-[1.02]"
-                    : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
-                )}
-              >
-                <Users className="h-4 w-4" />
-                <span>All Regions</span>
-              </button>
-            </div>
+        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl shrink-0 shadow-sm transition-colors">
+          <ScrollArea className="h-full">
+            <div className="p-5 space-y-6">
+              {/* Regional Filter */}
+              <div className="space-y-2">
+                <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Regional Ledger</h3>
+                <button
+                  onClick={() => setSelectedRegionId(null)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border",
+                    selectedRegionId === null
+                      ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xl scale-[1.02]"
+                      : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
+                  )}
+                >
+                  <Users className="h-4 w-4" />
+                  <span>All Regions</span>
+                </button>
 
-            <ScrollArea className="h-[300px] pr-2">
-              {fetchingRegions ? (
-                <div className="flex flex-col items-center justify-center py-10 gap-3">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary/30" />
+                <div className="space-y-1 mt-2">
+                  {fetchingRegions ? (
+                    <div className="flex flex-col items-center justify-center py-10 gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary/30" />
+                    </div>
+                  ) : (
+                    regions.map(node => (
+                      <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
+                    ))
+                  )}
                 </div>
-              ) : (
-                regions.map(node => (
-                  <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
-                ))
-              )}
-            </ScrollArea>
-
-            <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
-               <div className="space-y-2">
-                  <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600">Status</h3>
-                  <div className="relative">
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      className="w-full h-11 pl-4 pr-10 bg-slate-50 dark:bg-slate-800/50 rounded-xl border-none text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 outline-none cursor-pointer appearance-none"
-                    >
-                      <option value="ALL">ALL STATUS</option>
-                      <option value="COMPLETED">COMPLETED</option>
-                      <option value="PENDING">PENDING</option>
-                      <option value="FAILED">FAILED</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
-               </div>
-
-               <div className="space-y-2">
-                  <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600">Date Range</h3>
-                  <div className="flex flex-col gap-2">
-                      <div className="relative flex items-center h-11 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl group transition-all">
-                        <Calendar size={14} className="text-slate-400 mr-3 shrink-0" />
-                        <input
-                          type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                          className="w-full bg-transparent border-none text-[10px] font-black text-slate-600 dark:text-slate-300 outline-none uppercase tracking-widest cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0"
-                        />
-                        <span className="absolute right-4 text-[8px] font-black text-slate-300 uppercase pointer-events-none">Start</span>
-                      </div>
-                      <div className="relative flex items-center h-11 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl group transition-all">
-                        <Calendar size={14} className="text-slate-400 mr-3 shrink-0" />
-                        <input
-                          type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                          className="w-full bg-transparent border-none text-[10px] font-black text-slate-600 dark:text-slate-300 outline-none uppercase tracking-widest cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0"
-                        />
-                        <span className="absolute right-4 text-[8px] font-black text-slate-300 uppercase pointer-events-none">End</span>
-                      </div>
-                  </div>
-               </div>
+              </div>
             </div>
-          </div>
+          </ScrollArea>
         </aside>
 
         <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
           <div className="max-w-[1920px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             
+            {/* Filter Controls Row (Same level as stats and table) */}
+            <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                {/* Quick Range */}
+                <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-white/5">
+                  {[
+                    { id: 'TODAY', label: 'Today' },
+                    { id: 'WEEK', label: 'Week' },
+                    { id: 'MONTH', label: 'Month' },
+                    { id: 'ALL', label: 'All Time' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => handleQuickFilter(f.id)}
+                      className={cn(
+                        "px-4 h-8 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                        quickFilter === f.id
+                          ? "bg-primary text-slate-950 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      )}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2 hidden md:block" />
+
+                {/* Manual Range */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Period:</span>
+                  <div className="flex items-center bg-slate-50 dark:bg-slate-950 rounded-xl p-1 gap-1 border border-slate-100 dark:border-white/5">
+                    <IndustrialCalendarPicker
+                      value={startDate}
+                      onChange={(val) => {
+                        setStartDate(val);
+                        setEndDate(val); // 自动同步结束日期，实现点击一次即选定一天
+                        setQuickFilter("CUSTOM");
+                      }}
+                      placeholder="START DATE"
+                    />
+                    <span className="text-slate-300 dark:text-slate-700 text-xs mx-1">/</span>
+                    <IndustrialCalendarPicker
+                      value={endDate}
+                      onChange={(val) => { setEndDate(val); setQuickFilter("CUSTOM"); }}
+                      placeholder="END DATE"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  onClick={fetchFinanceData}
+                  disabled={loading}
+                  className="h-9 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-black uppercase text-[9px] tracking-widest hover:bg-primary dark:hover:bg-primary hover:text-slate-950 transition-all active:scale-95 shadow-sm flex items-center gap-2 ml-auto"
+                >
+                  {loading ? <Loader2 size={12} className="animate-spin" /> : <Search size={14} />}
+                  Search
+                </Button>
+            </div>
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {MOCK_STATS.map((stat, i) => (
+              {stats.map((stat, i) => (
                 <Card key={i} className="bg-white dark:bg-slate-900/60 rounded-2xl p-6 border-none shadow-sm dark:shadow-none relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 cursor-default flex items-center gap-5">
-                  <div className={cn("w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-500", stat.bg, stat.color)}>
-                    <stat.icon size={24} />
-                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
                       <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] pr-2">{stat.label}</p>
                       <div className={cn("flex items-center gap-0.5 text-[10px] font-black tracking-tighter", stat.isPositive ? "text-green-500" : "text-red-500")}>
-                        {stat.isPositive ? <ArrowUpRight size={12} strokeWidth={3} /> : <ArrowDownRight size={12} strokeWidth={3} />}
                         {stat.trend}
                       </div>
                     </div>
@@ -268,41 +506,61 @@ export default function FinancePage() {
                   <TableRow className="border-none hover:bg-transparent">
                     <TableHead className="w-[30%] py-6 px-10 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Transaction Detail</TableHead>
                     <TableHead className="w-[20%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Amount</TableHead>
-                    <TableHead className="w-[20%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Method</TableHead>
+                    <TableHead className="w-[20%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">POS/Operator</TableHead>
                     <TableHead className="w-[15%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Date & Time</TableHead>
-                    <TableHead className="w-[15%] text-right pr-10 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Status</TableHead>
+                    <TableHead className="w-[15%] text-right pr-10 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Type</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {filteredTransactions.map((trx, idx) => (
-                    <TableRow key={idx} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
+                  {transactions.map((trx, idx) => (
+                    <TableRow key={trx.transaction_id} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
                       <TableCell className="py-6 px-10 align-middle">
                         <div className="flex flex-col gap-1">
-                          <span className="font-black italic text-slate-900 dark:text-slate-100 text-[16px] uppercase tracking-tight leading-tight group-hover:text-primary transition-colors">{trx.customer}</span>
-                          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest font-mono">{trx.id}</span>
+                          <span className="font-black italic text-slate-900 dark:text-slate-100 text-[16px] uppercase tracking-tight leading-tight group-hover:text-primary transition-colors">{trx.customer_name}</span>
+                          <div className="flex items-center gap-2">
+                             <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest font-mono">
+                               ID: {trx.transaction_id.length > 12 ? `${trx.transaction_id.slice(0, 6)}...${trx.transaction_id.slice(-6)}` : trx.transaction_id}
+                             </span>
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 navigator.clipboard.writeText(trx.transaction_id);
+                                 toast.success("Transaction ID copied");
+                               }}
+                               className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-all text-slate-400"
+                             >
+                               <Copy size={10} />
+                             </button>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="align-middle">
-                        <span className="text-[18px] font-black italic text-slate-900 dark:text-slate-100 tracking-tighter">{trx.amount}</span>
+                        <div className="flex flex-col">
+                           <span className="text-[18px] font-black italic text-slate-900 dark:text-slate-100 tracking-tighter">₱{Number(trx.amount || 0).toFixed(2)}</span>
+                           <span className="text-[10px] font-bold text-slate-400">+{trx.days} Days</span>
+                        </div>
                       </TableCell>
                       <TableCell className="align-middle">
-                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 uppercase tracking-widest bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors">{trx.method}</span>
+                         <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-300 uppercase tracking-widest">{trx.pos_sn}</span>
+                            <span className="text-[9px] font-black text-slate-400 italic">@{trx.operator_username}</span>
+                         </div>
                       </TableCell>
                       <TableCell className="align-middle">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{trx.date.split(' ')[0]}</span>
-                          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{trx.date.split(' ').slice(1).join(' ')}</span>
+                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{trx.transaction_time.split(' ')[0]}</span>
+                          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{trx.transaction_time.split(' ')[1]?.substring(0, 5)}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right pr-10 align-middle">
-                        <Badge className={cn("px-3 py-1.5 rounded-lg border-none text-[9px] font-black uppercase tracking-widest inline-flex items-center shadow-sm", getStatusStyle(trx.status))}>
-                          {getStatusIcon(trx.status)}
-                          {trx.status}
+                        <Badge className={cn("px-3 py-1.5 rounded-lg border-none text-[9px] font-black uppercase tracking-widest inline-flex items-center shadow-sm", getStatusStyle(trx.action_type))}>
+                          {getStatusIcon(trx.action_type)}
+                          {trx.action_type === 'RECHARGE' ? 'LOAD' : trx.action_type}
                         </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredTransactions.length === 0 && (
+                  {transactions.length === 0 && !loading && (
                     <TableRow>
                       <TableCell colSpan={5} className="py-32 text-center">
                         <div className="flex flex-col items-center gap-4 opacity-20">

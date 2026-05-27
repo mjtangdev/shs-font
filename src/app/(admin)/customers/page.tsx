@@ -14,11 +14,14 @@ import {
   Trash2,
   Lock,
   AlertCircle,
+  Eye,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import apiClient from "@/lib/axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,6 +37,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface RegionData {
   id: number;
@@ -53,24 +66,32 @@ function RegionNode({
   onSelect: (id: number | null) => void;
   depth?: number;
 }) {
-  const isRoot = node.level === 0;
+  const isMunicipality = node.level === 0;
   const [isOpen, setIsOpen] = useState(true);
   const isSelected = selectedId === node.id;
   const hasChildren = node.children && node.children.length > 0;
+
   const getIcon = () => {
-    if (isRoot) return <Building2 className={cn("h-3.5 w-3.5", isSelected ? "text-white" : "text-blue-600")} />;
+    if (isMunicipality) return <Building2 className={cn("h-3.5 w-3.5", isSelected ? "text-white" : "text-primary")} />;
     if (node.level === 1) return <MapPin className={cn("h-3 w-3", isSelected ? "text-white" : "text-slate-400")} />;
     return <Home className={cn("h-3 w-3", isSelected ? "text-white" : "text-slate-400")} />;
   };
+
+  const getLevelLabel = () => {
+    if (isMunicipality) return "Municipality";
+    if (node.level === 1) return "Barangay";
+    return "Purok";
+  };
+
   return (
-    <div className="w-full select-none">
+    <div className="w-full select-none" title={getLevelLabel()}>
       <div
         onClick={() => onSelect(isSelected ? null : node.id)}
         className={cn(
           "flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1",
           isSelected
             ? "bg-primary text-white shadow-md shadow-primary/20"
-            : isRoot
+            : isMunicipality
               ? "bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
               : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400"
         )}
@@ -78,30 +99,30 @@ function RegionNode({
       >
         <div
           onClick={(e) => {
-            if (isRoot) return;
+            if (isMunicipality) return;
             e.stopPropagation();
             setIsOpen(!isOpen);
           }}
           className={cn(
             "w-4 h-4 flex items-center justify-center rounded transition-colors",
-            !isRoot && "hover:bg-black/5 dark:hover:bg-white/10"
+            !isMunicipality && "hover:bg-black/5 dark:hover:bg-white/10"
           )}
         >
-          {hasChildren && !isRoot && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
-          {isRoot && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1" />}
+          {hasChildren && !isMunicipality && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
+          {isMunicipality && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1" />}
         </div>
         {getIcon()}
         <span
           className={cn(
             "text-sm truncate flex-1 tracking-tight",
-            isRoot ? "text-sm font-black uppercase" : "font-semibold",
+            isMunicipality ? "text-sm font-black uppercase" : "font-semibold",
             isSelected ? "text-white" : "text-slate-700 dark:text-slate-300"
           )}
         >
           {node.name}
         </span>
       </div>
-      {hasChildren && (isRoot || isOpen) && (
+      {hasChildren && (isMunicipality || isOpen) && (
         <div className="relative my-0.5">
           {node.children.map((child) => (
             <RegionNode key={child.id} node={child} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />
@@ -113,6 +134,7 @@ function RegionNode({
 }
 
 export default function CustomerPage() {
+  const router = useRouter();
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
@@ -121,6 +143,11 @@ export default function CustomerPage() {
   const [isListLoading, setIsListLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 50;
 
   const [deletePassword, setDeletePassword] = useState("");
   const [customerToDelete, setCustomerToDelete] = useState<any>(null);
@@ -150,25 +177,37 @@ export default function CustomerPage() {
         params: {
           region_id: selectedRegionId || undefined,
           search: search || undefined,
+          skip: (currentPage - 1) * pageSize,
+          limit: pageSize,
         },
       });
       setCustomers(res.data.items || []);
+      setTotalCount(res.data.total || 0);
     } finally {
       setIsListLoading(false);
     }
+  }, [selectedRegionId, search, currentPage]);
+
+  // Reset to page 1 when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
   }, [selectedRegionId, search]);
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await apiClient.get("/customer/export", {
-        params: { region_id: selectedRegionId || undefined },
-        responseType: "blob",
+      const params = new URLSearchParams();
+      if (selectedRegionId) params.append('region_id', selectedRegionId.toString());
+
+      const response = await apiClient.get(`/customer/export?${params.toString()}`, {
+        responseType: 'blob'
       });
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute("download", `SHS_Customers_${new Date().toISOString().split("T")[0]}.xlsx`);
+      const date = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `SHS_Customers_${date}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -200,22 +239,22 @@ export default function CustomerPage() {
   }, [fetchCustomers]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-[#f8fafc] dark:bg-slate-950">
+    <div className="flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-slate-50 dark:bg-slate-950">
 
       {/* 1. Top Header - Move Search here */}
-      <header className="h-20 border-b border-slate-200 dark:border-slate-800/50 bg-white/80 dark:bg-slate-950/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
         <div className="flex items-center gap-8 flex-1">
           <Breadcrumbs items={[{ label: "customers" }]} />
 
           {/* Search Box in Header */}
-          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
             <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
             <input
               type="text"
               placeholder="SEARCH CUSTOMERS..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-950 dark:text-slate-100 placeholder:text-slate-400"
+              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
             />
             {isListLoading && <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" />}
           </div>
@@ -226,10 +265,10 @@ export default function CustomerPage() {
             variant="outline"
             onClick={handleExport}
             disabled={isExporting}
-            className="rounded-xl h-10 px-5 font-bold border-slate-200 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800 hover:bg-slate-50 dark:text-slate-200 uppercase text-[10px] tracking-widest transition-colors shadow-sm dark:shadow-none"
+            className="rounded-xl h-10 px-5 font-black border-slate-200 dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800 hover:bg-slate-50 dark:text-slate-200 uppercase text-[10px] tracking-widest transition-colors shadow-sm dark:shadow-none active:scale-95"
           >
             {isExporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
-            Export
+            Export List
           </Button>
           <Link href="/customers/create" passHref>
             <Button asChild className="rounded-xl h-10 px-6 font-bold shadow-sm dark:shadow-none transition-all active:scale-95 uppercase text-[10px] tracking-widest">
@@ -241,7 +280,7 @@ export default function CustomerPage() {
 
       {/* 2. Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800/50 bg-white/90 dark:bg-slate-950/50 backdrop-blur-xl p-5 flex flex-col gap-4 shrink-0 shadow-sm transition-colors">
+        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl p-5 flex flex-col gap-4 shrink-0 shadow-sm transition-colors">
           <ScrollArea className="flex-1">
             <div className="space-y-2 pr-3">
               <button
@@ -250,7 +289,7 @@ export default function CustomerPage() {
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-6 text-sm font-bold border",
                   selectedRegionId === null
-                    ? "bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-200 dark:bg-white dark:text-slate-900 dark:border-white dark:shadow-none scale-[1.02]"
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xl dark:bg-white dark:text-slate-900 dark:border-white dark:shadow-none scale-[1.02]"
                     : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
                 )}
               >
@@ -285,9 +324,7 @@ export default function CustomerPage() {
                       <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Contact</TableHead>
                       <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Region Area</TableHead>
                       <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Created At</TableHead>
-                      {userRole === "1" && (
-                        <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Actions</TableHead>
-                      )}
+                      <TableHead className="w-[15%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Operations</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -310,7 +347,7 @@ export default function CustomerPage() {
                           <span className="text-[13px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tight">{c.mobile}</span>
                         </TableCell>
                         <TableCell className="text-center align-middle">
-                          <Badge className="bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none px-3 py-1 rounded-full font-black text-[8px] uppercase shadow-sm mx-auto">
+                          <Badge className="bg-primary/10 text-primary border-none px-3 py-1 rounded-full font-black text-[8px] uppercase shadow-sm mx-auto">
                             {c.region_name}
                           </Badge>
                         </TableCell>
@@ -324,22 +361,48 @@ export default function CustomerPage() {
                             </span>
                           </div>
                         </TableCell>
-                        {userRole === "1" && (
-                          <TableCell className="text-right pr-8 align-middle">
+                        <TableCell className="text-right pr-8 align-middle">
+                          <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => {
-                                setCustomerToDelete(c);
-                                setDeletePassword("");
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              className="text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                              onClick={() => router.push(`/customers/${c.id}`)}
+                              className="text-slate-300 dark:text-slate-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                              title="View Details"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </TableCell>
-                        )}
+
+                            {userRole === "1" && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => router.push(`/customers/${c.id}?edit=true`)}
+                                  className="text-slate-300 dark:text-slate-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                  title="Edit Profile"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCustomerToDelete(c);
+                                    setDeletePassword("");
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                  className="text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                                  title="Delete Record"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -353,6 +416,57 @@ export default function CustomerPage() {
                   </div>
                 )}
               </Card>
+
+              {/* Pagination Controls */}
+              {totalCount > pageSize && (
+                <div className="flex items-center justify-between px-2 py-4">
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                    Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+                  </p>
+                  <Pagination className="w-auto mx-0">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
+                          className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
+                        // Simple logic for page numbers: 1, 2, 3, 4, 5...
+                        // In a real app with 100+ pages, you'd want ellipsis logic
+                        const pageNum = i + 1;
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === pageNum}
+                              onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      {Math.ceil(totalCount / pageSize) > 5 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
+                          className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </div>
           </div>
         </main>

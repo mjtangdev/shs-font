@@ -107,14 +107,12 @@ export default function SetupPage() {
     window.location.href = '/dashboard';
   };
 
-  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 text-slate-300 h-[60vh]">
-        <Loader2 className="animate-spin text-yellow-400" size={40} />
+        <Loader2 className="animate-spin text-primary" size={40} />
         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Initializing Setup...</span>
       </div>
     );
-  }
 
   return (
     <div className="flex flex-col pt-[84px] md:pt-[116px] pb-6 px-4 overflow-x-hidden">
@@ -130,12 +128,12 @@ export default function SetupPage() {
           </p>
 
           <div className="flex items-center justify-center gap-4 mt-6">
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 1 ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 1 ? 'border-primary bg-primary/10 text-primary' : 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
               <span className="text-[12px] font-black">1</span>
               <span className="text-[10px] font-black uppercase tracking-widest">Org</span>
             </div>
             <div className="w-8 h-[2px] bg-slate-200 dark:bg-slate-700" />
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 2 ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400' : 'border-transparent bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border-2 transition-all ${step === 2 ? 'border-primary bg-primary/10 text-primary' : 'border-transparent bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
               <span className="text-[12px] font-black">2</span>
               <span className="text-[10px] font-black uppercase tracking-widest">Regions</span>
             </div>
@@ -182,7 +180,7 @@ export default function SetupPage() {
               </div>
             </div>
             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-end gap-4">
-              <Button disabled={submitting} className="h-10 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black dark:hover:bg-yellow-400 dark:hover:text-slate-900 transition-all active:scale-95 gap-2">
+              <Button disabled={submitting} className="h-10 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-black dark:hover:bg-primary dark:hover:text-slate-950 transition-all active:scale-95 gap-2">
                 {submitting ? <Loader2 className="animate-spin" /> : <>Next Step: Setup Regions <ArrowRight size={14}/></>}
               </Button>
             </div>
@@ -197,7 +195,7 @@ export default function SetupPage() {
               <Button type="button" variant="ghost" onClick={() => setStep(1)} className="h-10 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest text-slate-400 hover:text-slate-900">
                 Back to Organization
               </Button>
-              <Button onClick={handleFinishSetup} className="h-10 px-8 bg-yellow-400 text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-yellow-500 transition-all active:scale-95 gap-2">
+              <Button onClick={handleFinishSetup} className="h-10 px-8 bg-primary text-slate-950 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-primary/90 transition-all active:scale-95 gap-2">
                 Complete Setup <CheckCircle2 size={14}/>
               </Button>
             </div>

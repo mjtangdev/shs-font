@@ -12,9 +12,8 @@ import { cn } from "@/lib/utils";
 
 import Breadcrumbs from '@/components/Breadcrumbs'; 
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 
@@ -46,7 +45,7 @@ export default function CreatePOSPage() {
       try {
         const res = await apiClient.get('/user/');
         const data = Array.isArray(res.data) ? res.data : (res.data.items || []);
-        // 根据 shs-backend/app/models/users.py: 2 是 Operator
+        // 根据业务规则：2 是 Operator
         const operators = data.filter((u: UserRecord) => u.role === 2);
         setUsers(operators);
       } catch (err) {
@@ -186,6 +185,9 @@ export default function CreatePOSPage() {
                             <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3">
                                 <UserPlus className="text-primary" /> Select Operator
                             </DialogTitle>
+                            <DialogDescription className="sr-only">
+                                Search and select an operator to assign to this POS terminal.
+                            </DialogDescription>
                         </DialogHeader>
                         <div className="p-6 space-y-4">
                             <div className="relative">

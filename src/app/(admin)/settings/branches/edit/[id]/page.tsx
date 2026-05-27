@@ -137,7 +137,7 @@ export default function EditEntityPage() {
             }}
             className={cn(
               "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent cursor-pointer",
-              isSelected ? "bg-yellow-50 border-yellow-400" : "hover:bg-slate-50 border-slate-50"
+              isSelected ? "bg-primary/10 border-primary" : "hover:bg-slate-50 border-slate-50"
             )}
             style={{ marginLeft: `${(node.level - 1) * 20}px` }}
           >
@@ -156,12 +156,12 @@ export default function EditEntityPage() {
               <span className={cn(
                 "text-[18px] font-bold tracking-tight",
                 (node.is_occupied && node.id !== formData.region_id) ? 'text-slate-200' : 'text-slate-900',
-                isSelected && "text-yellow-600"
+                isSelected && "text-primary"
               )}>
                 {node.name}
               </span>
             </div>
-            {isSelected && <CheckCircle2 size={26} className="text-yellow-500 animate-in zoom-in" />}
+            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in" />}
           </div>
           {hasChildren && isExpanded && renderTreeRows(node.children, node.name)}
         </div>
@@ -211,12 +211,12 @@ export default function EditEntityPage() {
         <form onSubmit={handleSubmit} className="space-y-12">
           <div className="grid grid-cols-1 gap-10">
             <div className="group space-y-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 group-focus-within:text-yellow-600 transition-colors">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 group-focus-within:text-primary transition-colors">
                 <Building2 size={14} /> Entity Name
               </label>
               <input 
                 required
-                className="w-full bg-transparent border-b-2 border-slate-100 py-4 text-xl font-black uppercase italic tracking-tight outline-none focus:border-yellow-400 transition-all text-slate-900 dark:text-slate-100"
+                className="w-full bg-transparent border-b-2 border-slate-100 py-4 text-xl font-black uppercase italic tracking-tight outline-none focus:border-primary transition-all text-slate-900 dark:text-slate-100"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
@@ -228,7 +228,7 @@ export default function EditEntityPage() {
               </label>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <button type="button" className="w-full bg-transparent border-b-2 border-slate-100 py-4 flex items-center justify-between group hover:border-slate-400 focus:border-yellow-400 transition-all text-left">
+                  <button type="button" className="w-full bg-transparent border-b-2 border-slate-100 py-4 flex items-center justify-between group hover:border-slate-400 focus:border-primary transition-all text-left">
                     <span className={cn("text-xl font-black uppercase italic tracking-tight", formData.region_id ? "text-slate-900" : "text-slate-300")}>
                       {formData.region_name || "Assign regional node..."}
                     </span>
@@ -241,7 +241,7 @@ export default function EditEntityPage() {
                     <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
                   </DialogHeader>
                   <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
-                    {fetchingRegions ? <Loader2 className="animate-spin text-yellow-400 mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
+                    {fetchingRegions ? <Loader2 className="animate-spin text-primary mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -253,7 +253,7 @@ export default function EditEntityPage() {
               </label>
               <input 
                 required
-                className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-sm font-bold uppercase tracking-widest outline-none focus:border-yellow-400 transition-all text-slate-900 dark:text-slate-100"
+                className="w-full bg-transparent border-b-2 border-slate-100 py-3 text-sm font-bold uppercase tracking-widest outline-none focus:border-primary transition-all text-slate-900 dark:text-slate-100"
                 value={formData.address}
                 onChange={(e) => setFormData({...formData, address: e.target.value})}
               />
@@ -264,9 +264,9 @@ export default function EditEntityPage() {
             <button 
               type="submit"
               disabled={loading}
-              className="flex items-center gap-3 px-12 h-[64px] bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] hover:bg-yellow-400 hover:text-slate-900 transition-all active:scale-95 shadow-2xl disabled:opacity-50"
+              className="flex items-center gap-3 px-12 h-[64px] bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] hover:bg-primary hover:text-slate-950 transition-all active:scale-95 shadow-2xl disabled:opacity-50"
             >
-              {loading ? <Loader2 size={20} className="animate-spin" /> : <>Confirm Updates <CheckCircle2 size={18} /></>}
+              {loading ? <Loader2 size={20} className="animate-spin text-primary" /> : <>Confirm Updates <CheckCircle2 size={18} /></>}
             </button>
 
             <button 
