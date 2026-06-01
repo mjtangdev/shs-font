@@ -4,7 +4,7 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   CheckCircle2, Loader2, Home, ChevronRight, 
-  UserPlus, ShieldCheck, Lock, Mail, Phone, UserCircle2, ChevronDown
+  UserPlus, ShieldCheck, Lock, Mail, Phone, UserCircle2, ChevronDown, Eye, EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from "sonner";
@@ -37,7 +37,9 @@ export default function CreateUserPage() {
   const [fetchingRegions, setFetchingRegions] = useState(true);
   const [regions, setRegions] = useState<RegionNode[]>([]);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
-  
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   // 保持要求的 JSON 数据结构
   const [formData, setFormData] = useState({
     username: '',
@@ -83,6 +85,7 @@ export default function CreateUserPage() {
     if (!formData.first_name.trim()) return toast.error("First name is required");
     if (!formData.last_name.trim()) return toast.error("Last name is required");
     if (!formData.password) return toast.error("Password is required");
+    if (formData.password !== confirmPassword) return toast.error("Passwords do not match");
     if (!formData.mobile.trim()) return toast.error("Mobile number is required");
     if (!formData.email.trim()) return toast.error("Email address is required");
     if (!formData.region_id) return toast.error("Please assign a regional node");
@@ -127,6 +130,10 @@ export default function CreateUserPage() {
 
       const isSelected = formData.region_id === node.id;
 
+      // 业务逻辑：如果当前正在创建业务员 (Role 2)，则仅允许选择 Level 2 (Purok)
+      // 禁止选择 Level 1 (Barangay)
+      const isSelectable = formData.role !== 2 || node.level === 2;
+
       const getLevelLabel = (level: number) => {
         if (level === 0) return "Municipality";
         if (level === 1) return "Barangay";
@@ -137,6 +144,12 @@ export default function CreateUserPage() {
         <div key={node.id} className="select-none">
           <div
             onClick={() => {
+              if (formData.role === 2 && node.level === 1) {
+                  // 如果是业务员且点击了第二层级（Barangay），自动执行展开/折叠动作而不是选中
+                  setExpandedIds(prev => prev.includes(node.id) ? prev.filter(i => i !== node.id) : [...prev, node.id]);
+                  return;
+              }
+              if (!isSelectable) return;
               setFormData({
                 ...formData,
                 region_id: node.id,
@@ -146,8 +159,9 @@ export default function CreateUserPage() {
             }}
             title={getLevelLabel(node.level)}
             className={cn(
-              "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent cursor-pointer",
-              isSelected ? "bg-primary/10 border-primary" : "hover:bg-slate-50 border-slate-50"
+              "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent",
+              !isSelectable && node.level !== 1 ? "opacity-30 cursor-not-allowed grayscale" : "cursor-pointer",
+              isSelected ? "bg-primary/10 border-primary" : (isSelectable || node.level === 1) ? "hover:bg-slate-50 border-slate-50" : ""
             )}
             style={{ marginLeft: `${(node.level - 1) * 20}px` }}
           >
@@ -156,7 +170,10 @@ export default function CreateUserPage() {
                 {node.level === 1 && hasChildren && (
                   <button 
                     type="button"
-                    onClick={(e) => toggleExpand(node.id, e)} 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpand(node.id, e);
+                    }}
                     className="text-slate-400 p-2 hover:bg-slate-200 rounded-lg"
                   >
                     {isExpanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
@@ -166,12 +183,13 @@ export default function CreateUserPage() {
               <div className="flex flex-col text-left">
                 <span className={cn(
                   "text-[18px] font-bold tracking-tight text-slate-900",
-                  isSelected && "text-primary"
+                  isSelected && "text-primary",
+                  !isSelectable && "text-slate-400"
                 )}>
                   {node.name}
                 </span>
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mt-1">
-                  {getLevelLabel(node.level)}
+                  {getLevelLabel(node.level)} {!isSelectable && "(Restricted for Operators)"}
                 </span>
               </div>
             </div>
@@ -270,19 +288,41 @@ export default function CreateUserPage() {
               </div>
             </div>
 
-            {/* 密码：已取消长度限制 */}
-            <div className="space-y-3">
-              <label className={labelStyles}>Security Password *</label>
-              <div className="relative">
-                <input 
-                  required
-                  type="password"
-                  className={inputStyles}
-                  placeholder="No limit password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                />
-                <Lock size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-200" />
+            {/* 密码网格 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <label className={labelStyles}>Security Password *</label>
+                <div className="relative">
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    className={inputStyles}
+                    placeholder="Enter password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 hover:text-primary transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className={labelStyles}>Confirm Password *</label>
+                <div className="relative">
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    className={inputStyles}
+                    placeholder="Repeat password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <Lock size={18} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-200" />
+                </div>
               </div>
             </div>
 

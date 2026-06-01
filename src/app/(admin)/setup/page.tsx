@@ -107,12 +107,14 @@ export default function SetupPage() {
     window.location.href = '/dashboard';
   };
 
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 text-slate-300 h-[60vh]">
         <Loader2 className="animate-spin text-primary" size={40} />
         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Initializing Setup...</span>
       </div>
     );
+  }
 
   return (
     <div className="flex flex-col pt-[84px] md:pt-[116px] pb-6 px-4 overflow-x-hidden">
@@ -149,7 +151,7 @@ export default function SetupPage() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-4">Organization Logo</label>
                   <div className="relative group w-20 h-20 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0 shadow-inner">
                     {compLogoPreview ? (
-                      <img src={compLogoPreview} className="w-full h-full object-cover" alt="logo preview" />
+                      <img src={compLogoPreview ?? undefined} className="w-full h-full object-cover" alt="logo preview" />
                     ) : (
                       <Building2 className="w-full h-full p-5 text-slate-200" />
                     )}

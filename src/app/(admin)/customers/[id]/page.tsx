@@ -439,14 +439,24 @@ export default function CustomerProfilePage() {
                         <ChevronDown size={28} className="text-slate-300" />
                       </button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl bg-white dark:bg-slate-900 outline-none">
-                      <DialogHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
+                    <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900 outline-none overflow-hidden">
+                      <DialogHeader className="p-10 border-b border-slate-50 dark:border-slate-800 shrink-0">
                         <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter dark:text-white">Select New Node</DialogTitle>
                         <DialogDescription className="sr-only">
                           Select a new regional node to update the deployment location.
                         </DialogDescription>
                       </DialogHeader>
-                      <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900">{fetchingRegions ? <Loader2 className="animate-spin mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}</div>
+                      <ScrollArea className="max-h-[70vh]">
+                        <div className="px-6 py-8 bg-white dark:bg-slate-900">
+                          {fetchingRegions ? (
+                            <div className="flex flex-col items-center justify-center py-20">
+                              <Loader2 className="animate-spin text-primary" size={40} />
+                            </div>
+                          ) : (
+                            <div className="space-y-1">{renderTreeRows(regions)}</div>
+                          )}
+                        </div>
+                      </ScrollArea>
                     </DialogContent>
                   </Dialog>
                 </div>

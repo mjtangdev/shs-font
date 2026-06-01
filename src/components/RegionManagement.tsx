@@ -185,7 +185,7 @@ export const RegionManagement: React.FC<RegionManagementProps> = ({ refreshTrigg
         region_id: targetParent.id, 
         name: newName.trim() 
       });
-      toast.success("Region updated successfully");
+      toast.success("Municipality updated successfully");
       setIsRootEditOpen(false);
       setIsPlaceholderOpen(false);
       fetchRegions();
@@ -432,7 +432,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">Modify Root Identity</p>
           </DialogHeader>
           <div className="py-10">
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} className={`w-full max-w-[260px] mx-auto h-14 text-center ${commonInputStyles}`} />
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Municipality Name" className={`w-full max-w-[260px] mx-auto h-14 text-center ${commonInputStyles}`} />
           </div>
           <DialogFooter className="bg-transparent border-none p-0 sm:justify-center">
             <button 
@@ -453,11 +453,11 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
             <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-center mx-auto mb-2 border border-slate-100 dark:border-slate-800">
               <AlertCircle className="text-slate-400" size={28} />
             </div>
-            <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Rename Region</DialogTitle>
+            <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Municipality</DialogTitle>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">Update name for: {targetParent?.name}</p>
           </DialogHeader>
           <div className="py-10">
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} className={`w-full max-w-[260px] mx-auto h-14 text-center ${commonInputStyles}`} />
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Municipality Name" className={`w-full max-w-[260px] mx-auto h-14 text-center ${commonInputStyles}`} />
           </div>
           <DialogFooter className="bg-transparent border-none p-0 sm:justify-center">
             <button 
@@ -479,7 +479,7 @@ const submitNewRegion = async (type: 'City' | 'Town') => {
               <Percent className="text-primary" size={28} />
             </div>
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Update Daily Rate</DialogTitle>
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">Region: {targetParent?.name}</p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic tracking-wider">Municipality: {targetParent?.name}</p>
           </DialogHeader>
           <div className="py-10 flex items-center justify-center w-full max-w-[260px] mx-auto">
             <span className="inline-block text-xl font-black italic text-slate-400 dark:text-slate-500 !mr-[5px] shrink-0">₱</span>

@@ -6,13 +6,13 @@ import {
   UserCircle2, Building2, Edit2,
   Loader2, Construction, Wallet, Shield,
   Mail, Phone, Users, ChevronDown, ChevronRight, MapPin, Home,
-  RefreshCcw, Briefcase
+  RefreshCcw, Briefcase, Trash2, Lock, KeyRound, Eye, EyeOff
 } from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -20,6 +20,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import Breadcrumbs from "@/components/Breadcrumbs";
 
@@ -59,6 +60,7 @@ interface UserRecord {
   is_active: boolean;
   entity_name?: string;
   region_id?: number;
+  pos_sn?: string; // 新增：绑定的 POS SN
 }
 
 interface RegionData {
@@ -143,6 +145,25 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [showDevModal, setShowDevModal] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Deletion States
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [userToDelete, setUserToDelete] = useState<UserRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Password Reset States
+  const [isResetPasswordOpen, setIsResetResetPasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [userToReset, setUserToReset] = useState<UserRecord | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem("user_role"));
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -154,6 +175,48 @@ export default function UsersPage() {
       toast.error("DATA SYNC ERROR: Registry access denied.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete || !deletePassword) return;
+
+    setIsDeleting(true);
+    try {
+      await apiClient.delete('/user/delete', {
+        data: {
+          user_id: userToDelete.id,
+          admin_password: deletePassword
+        }
+      });
+      toast.success("User account deactivated successfully");
+      setIsDeleteDialogOpen(false);
+      setDeletePassword("");
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Authorization failed or system error");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmResetPassword = async () => {
+    if (!userToReset || !newPassword) return;
+    if (newPassword !== confirmNewPassword) return toast.error("Passwords do not match");
+
+    setIsResetting(true);
+    try {
+      await apiClient.patch('/user/update', {
+        user_id: userToReset.id,
+        password: newPassword
+      });
+      toast.success(`Password for @${userToReset.username} has been updated`);
+      setIsResetResetPasswordOpen(false);
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to update password");
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -298,9 +361,10 @@ export default function UsersPage() {
                 <Table className="table-fixed">
                   <TableHeader className="bg-transparent border-b border-slate-100 dark:border-white/5 transition-colors">
                     <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="w-[25%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">User Identity</TableHead>
-                      <TableHead className="w-[25%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Contact</TableHead>
-                      <TableHead className="w-[25%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Assignment & Role</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">User Identity</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Contact</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Assignment & Role</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Asset</TableHead>
                       <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Auth Status</TableHead>
                       <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Actions</TableHead>
                     </TableRow>
@@ -336,14 +400,54 @@ export default function UsersPage() {
                           </div>
                         </TableCell>
                         <TableCell className="px-8 align-middle text-center">
+                           {user.pos_sn ? (
+                             <div className="flex flex-col items-center">
+                                <span className="text-[10px] font-black uppercase text-primary italic">POS Bound</span>
+                                <span className="text-[9px] font-mono text-slate-400">SN: {user.pos_sn}</span>
+                             </div>
+                           ) : (
+                             <span className="text-[9px] font-black uppercase text-slate-300 dark:text-slate-700 italic">No Device</span>
+                           )}
+                        </TableCell>
+                        <TableCell className="px-8 align-middle text-center">
                           <Badge variant="outline" className={cn("px-4 py-1 rounded-full font-black text-[9px] uppercase border-2 mx-auto", user.is_active ? "bg-green-50 text-green-600 border-green-100 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" : "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20")}>
                              {user.is_active ? 'Authorized' : 'Suspended'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right pr-8 align-middle">
-                          <Button variant="ghost" size="icon" onClick={() => setShowDevModal(true)} className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all">
-                            <Edit2 size={14} />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setUserToReset(user);
+                                setNewPassword("");
+                                setIsResetResetPasswordOpen(true);
+                              }}
+                              className="text-slate-300 dark:text-slate-600 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition-all"
+                              title="Reset Password"
+                            >
+                              <KeyRound size={14} />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setShowDevModal(true)} className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all">
+                              <Edit2 size={14} />
+                            </Button>
+                            {(userRole === "1" || userRole === "3") && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                    setUserToDelete(user);
+                                    setDeletePassword("");
+                                    setIsDeleteDialogOpen(true);
+                                }}
+                                className="text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                title="Delete Member"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -389,6 +493,7 @@ export default function UsersPage() {
       </div>
 
       <Dialog open={showDevModal} onOpenChange={setShowDevModal}>
+        {/* ... (existing dev modal content) ... */}
         <DialogContent className="max-w-[400px] rounded-2xl border-none bg-white dark:bg-slate-900/60 p-0 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
           <div className="h-2 bg-primary" />
           <div className="p-10 flex flex-col items-center text-center space-y-6">
@@ -404,6 +509,137 @@ export default function UsersPage() {
             <button onClick={() => setShowDevModal(false)} className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-primary dark:hover:bg-primary hover:text-slate-950 transition-all active:scale-95 shadow-xl dark:shadow-none">
               Confirm Awareness
             </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deletion Authorization Modal */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-[420px] rounded-[2.5rem] border-none shadow-2xl p-10 bg-white dark:bg-slate-900/90 backdrop-blur-xl">
+          <DialogHeader className="text-center space-y-4">
+            <div className={cn(
+                "w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-2 border shadow-xl transition-all",
+                userToDelete?.pos_sn
+                    ? "bg-amber-50 border-amber-100 text-amber-500 dark:bg-amber-500/10 dark:border-amber-500/20"
+                    : "bg-red-50 border-red-100 text-red-500 dark:bg-red-500/10 dark:border-red-500/20"
+            )}>
+              {userToDelete?.pos_sn ? <RefreshCcw size={32} /> : <Lock size={32} />}
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">
+              {userToDelete?.pos_sn ? 'Unbind & Delete' : 'Security Clearance'}
+            </DialogTitle>
+            <DialogDescription className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed italic">
+              {userToDelete?.pos_sn ? (
+                  <>
+                    This operator is still bound to POS <span className="text-amber-500 font-black">#{userToDelete.pos_sn}</span>.
+                    Deletion will automatically unassign the device.
+                  </>
+              ) : (
+                  `Enter administrative password to deactivate @${userToDelete?.username}`
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-8 space-y-4">
+            <div className="relative">
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" size={20} />
+                <Input
+                    type="password"
+                    placeholder="Admin Password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className="w-full h-14 pl-12 rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 focus:ring-2 focus:ring-primary/20 font-bold text-lg outline-none"
+                    autoFocus
+                />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={confirmDeleteUser}
+              disabled={isDeleting || !deletePassword}
+              className={cn(
+                  "w-full h-14 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl active:scale-95",
+                  userToDelete?.pos_sn ? "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20" : "bg-red-500 hover:bg-red-600 shadow-red-500/20"
+              )}
+            >
+              {isDeleting ? <Loader2 className="animate-spin" /> : userToDelete?.pos_sn ? 'Authorize Unbind & Deactivate' : 'Confirm Deactivation'}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Reset Modal */}
+      <Dialog open={isResetPasswordOpen} onOpenChange={setIsResetResetPasswordOpen}>
+        <DialogContent className="max-w-[420px] rounded-[2.5rem] border-none shadow-2xl p-10 bg-white dark:bg-slate-900/90 backdrop-blur-xl">
+          <DialogHeader className="text-center space-y-4">
+            <div className="w-20 h-20 bg-amber-50 border border-amber-100 text-amber-500 dark:bg-amber-500/10 dark:border-amber-500/20 rounded-3xl flex items-center justify-center mx-auto mb-2 border shadow-xl">
+              <KeyRound size={32} />
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">
+              Identity Update
+            </DialogTitle>
+            <DialogDescription className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed italic">
+              Override access credentials for <span className="text-amber-500 font-black">@{userToReset?.username}</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-8 space-y-4">
+            <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" size={20} />
+                <Input
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="ENTER NEW PASSWORD"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full h-14 pl-12 pr-12 rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 focus:ring-2 focus:ring-primary/20 font-bold text-lg outline-none"
+                    autoFocus
+                />
+                <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-primary transition-colors"
+                >
+                    {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+            </div>
+            <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" size={20} />
+                <Input
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="CONFIRM NEW PASSWORD"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="w-full h-14 pl-12 rounded-2xl border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 focus:ring-2 focus:ring-primary/20 font-bold text-lg outline-none"
+                />
+            </div>
+            <p className="text-[9px] font-black uppercase text-slate-400 mt-4 text-center tracking-widest">
+              Standard encryption will be applied automatically
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Button
+              onClick={confirmResetPassword}
+              disabled={isResetting || !newPassword}
+              className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl active:scale-95 shadow-amber-500/20"
+            >
+              {isResetting ? <Loader2 className="animate-spin" /> : 'Commit Password Change'}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setIsResetResetPasswordOpen(false)}
+              className="w-full h-14 rounded-2xl font-black uppercase text-xs tracking-widest text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all active:scale-95"
+            >
+              Cancel
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

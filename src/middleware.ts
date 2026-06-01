@@ -1,16 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function proxy(request: NextRequest) {
-  // 1. 获取 Token (注意：中间件只能读取 Cookie，无法读取 LocalStorage)
-  // Note: Middleware runs on server-side, it can only access Cookies.
+export function middleware(request: NextRequest) {
   const token = request.cookies.get('shs_token')?.value;
-  const setupStatus = request.cookies.get('shs_setup_status')?.value; // 获取初始化状态 Cookie
+  const setupStatus = request.cookies.get('shs_setup_status')?.value;
   const { pathname } = request.nextUrl;
 
-  // 2. 定义不需要拦截的白名单 / Public paths
-  if (pathname === '/login' || pathname.startsWith('/_next') || pathname === '/favicon.ico') {
+  // 1. 定义不需要拦截的白名单 / Public paths
+  if (pathname === '/login' || pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname.startsWith('/static')) {
     return NextResponse.next();
+  }
+
+  // 2. 如果访问根目录 / Handle root path
+  if (pathname === '/') {
+    if (token) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    } else {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   // 3. 如果没有 Token，重定向到登录页 / Redirect to login if no token

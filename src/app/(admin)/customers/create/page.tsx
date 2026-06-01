@@ -160,6 +160,8 @@ export default function CreateCustomerPage() {
   const [regions, setRegions] = useState<RegionNode[]>([]);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   
+  const [userRole, setUserRole] = useState<number | null>(null);
+
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -175,7 +177,31 @@ export default function CreateCustomerPage() {
     rep_relationship: '-',
   });
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('user_role');
+      const rId = localStorage.getItem('region_id');
+      const rName = localStorage.getItem('region_name');
+
+      const parsedRole = role ? parseInt(role, 10) : null;
+      setUserRole(parsedRole);
+
+      if (parsedRole === 2 && rId) {
+        // 如果是业务员，自动填充其所属区域
+        setFormData(prev => ({
+          ...prev,
+          region_id: parseInt(rId, 10),
+          region_name: rName || 'Assigned Region'
+        }));
+      }
+    }
+  }, []);
+
   const fetchRegionData = useCallback(async () => {
+    if (userRole === 2) {
+      setFetchingRegions(false);
+      return; // 业务员不需要拉取地区树
+    }
     setFetchingRegions(true);
     try {
       const res = await apiClient.get('/org/regions/tree');
@@ -348,31 +374,42 @@ export default function CreateCustomerPage() {
 
           <div className="p-10 md:p-14 space-y-12">
 
-            {/* Region Selection */}
-            <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Deployment Location</label>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <button type="button" className="w-full h-20 px-8 border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl flex items-center justify-between group hover:border-primary transition-all text-left">
-                    <div className="flex items-center gap-5">
-                      <MapPin className="text-primary" size={24} />
-                      <span className={cn("text-xl font-black italic uppercase", formData.region_id ? "text-slate-900 dark:text-slate-100" : "text-slate-300 dark:text-slate-600")}>
-                        {formData.region_name || "Select target region..."}
-                      </span>
-                    </div>
-                    <ChevronDown size={28} className="text-slate-300" />
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl bg-white dark:bg-slate-900 outline-none">
-                  <DialogHeader className="p-10 border-b border-slate-50 dark:border-slate-800">
-                    <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter dark:text-white">Regional Hierarchy</DialogTitle>
-                  </DialogHeader>
-                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900">
-                    {fetchingRegions ? <Loader2 className="animate-spin text-primary mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+            {/* Region Selection - Only visible to Admins */}
+            {userRole !== 2 && (
+              <div className="space-y-4">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Deployment Location</label>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <button type="button" className="w-full h-20 px-8 border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-2xl flex items-center justify-between group hover:border-primary transition-all text-left">
+                      <div className="flex items-center gap-5">
+                        <MapPin className="text-primary" size={24} />
+                        <span className={cn("text-xl font-black italic uppercase", formData.region_id ? "text-slate-900 dark:text-slate-100" : "text-slate-300 dark:text-slate-600")}>
+                          {formData.region_name || "Select target region..."}
+                        </span>
+                      </div>
+                      <ChevronDown size={28} className="text-slate-300" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900 outline-none overflow-hidden">
+                    <DialogHeader className="p-10 border-b border-slate-50 dark:border-slate-800 shrink-0">
+                      <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter dark:text-white">Regional Hierarchy</DialogTitle>
+                      <DialogDescription className="sr-only">Select target region for deployment</DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[70vh]">
+                      <div className="px-6 py-8 bg-white dark:bg-slate-900">
+                        {fetchingRegions ? (
+                          <div className="flex flex-col items-center justify-center py-20">
+                            <Loader2 className="animate-spin text-primary" size={40} />
+                          </div>
+                        ) : (
+                          <div className="space-y-1">{renderTreeRows(regions)}</div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
 
             {/* Excel Upload Section */}
             <div className="pt-2">
@@ -383,7 +420,9 @@ export default function CreateCustomerPage() {
                 </div>
                 <div className="text-center">
                   <h4 className="text-sm font-black uppercase text-slate-900 dark:text-slate-100">Bulk Import via Spreadsheet</h4>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Select region above first</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                    {userRole === 2 ? `Target: ${formData.region_name}` : "Select region above first"}
+                  </p>
                 </div>
               </label>
             </div>

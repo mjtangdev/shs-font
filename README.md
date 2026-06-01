@@ -1,15 +1,21 @@
 # SHS - Solar Home System Frontend | 太阳能家庭系统前端
 
 > **Quick Docker Build (Cross-platform) | 快速跨平台打包命令**:
-> ```bash
-> # Build for Linux amd64 (Intel/AMD) from any platform
-> docker buildx build \
-> --platform linux/amd64 \
-> --build-arg NEXT_PUBLIC_API_URL=https://api.shstest.site/api/v1 \
-> -t mjtangdev/shs-frontend:latest \
-> --push \
-> .
-> ```
+>
+> **Option A: Quezelco Stable | Quezelco 稳定版**:
+> - macOS/Linux: `bash build-quezelco.sh`
+> - Windows: `build-quezelco.bat`
+>
+> **Option B: Latest Test | 最新测试版**:
+> - macOS/Linux: `bash build-latest.sh`
+> - Windows: `build-latest.bat`
+>
+> **Deployment Registry | 部署配置记录**:
+> | Client | Base URL (API) | Script Name | Docker Tag |
+> | :--- | :--- | :--- | :--- |
+> | **Quezelco** | `http://192.168.3.60:8085/api/v1` | `build-quezelco` | `:quezelco` |
+> | **Latest/General** | `https://api.shstest.site/api/v1` | `build-latest` | `:latest` |
+>
 
 A modern, high-performance web interface for managing Solar Home Systems, built with Next.js 16, React 19, and Tailwind CSS 4.
 一个基于 Next.js 16、React 19 和 Tailwind CSS 4 构建的现代化、高性能太阳能家庭系统管理界面。

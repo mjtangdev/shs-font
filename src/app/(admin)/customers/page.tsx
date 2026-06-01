@@ -139,6 +139,7 @@ export default function CustomerPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  const [isBoundFilter, setIsBoundFilter] = useState<string>("all"); // 'all', 'bound', 'unbound'
   const [loading, setLoading] = useState(false);
   const [isListLoading, setIsListLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -147,7 +148,7 @@ export default function CustomerPage() {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 50;
+  const [pageSize, setPageSize] = useState(20); // 默认改为 20
 
   const [deletePassword, setDeletePassword] = useState("");
   const [customerToDelete, setCustomerToDelete] = useState<any>(null);
@@ -177,6 +178,7 @@ export default function CustomerPage() {
         params: {
           region_id: selectedRegionId || undefined,
           search: search || undefined,
+          is_bound: isBoundFilter === 'all' ? undefined : isBoundFilter === 'bound',
           skip: (currentPage - 1) * pageSize,
           limit: pageSize,
         },
@@ -186,18 +188,19 @@ export default function CustomerPage() {
     } finally {
       setIsListLoading(false);
     }
-  }, [selectedRegionId, search, currentPage]);
+  }, [selectedRegionId, search, isBoundFilter, currentPage, pageSize]);
 
-  // Reset to page 1 when filter or search changes
+  // Reset to page 1 when filter, search, or page size changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedRegionId, search]);
+  }, [selectedRegionId, search, isBoundFilter, pageSize]);
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
       const params = new URLSearchParams();
       if (selectedRegionId) params.append('region_id', selectedRegionId.toString());
+      if (search) params.append('search', search);
 
       const response = await apiClient.get(`/customer/export?${params.toString()}`, {
         responseType: 'blob'
@@ -207,7 +210,7 @@ export default function CustomerPage() {
       const link = document.createElement('a');
       link.href = url;
       const date = new Date().toISOString().split('T')[0];
-      link.setAttribute('download', `SHS_Customers_${date}.csv`);
+      link.setAttribute('download', `SHS_Customers_${date}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -241,22 +244,47 @@ export default function CustomerPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-slate-50 dark:bg-slate-950">
 
-      {/* 1. Top Header - Move Search here */}
+      {/* 1. Top Header */}
       <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
         <div className="flex items-center gap-8 flex-1">
           <Breadcrumbs items={[{ label: "customers" }]} />
 
-          {/* Search Box in Header */}
-          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-            <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
-            <input
-              type="text"
-              placeholder="SEARCH CUSTOMERS..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
-            />
-            {isListLoading && <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" />}
+          {/* Search Box & Tabs Group */}
+          <div className="flex items-center gap-4 flex-1 max-w-4xl">
+            {/* Search Input */}
+            <div className="relative flex-1 flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+              <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
+              <input
+                type="text"
+                placeholder="SEARCH CUSTOMERS..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+              />
+              {isListLoading && <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" />}
+            </div>
+
+            {/* Binding Filter Tabs */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+              {[
+                { id: 'all', label: 'All Entries' },
+                { id: 'bound', label: 'Bound' },
+                { id: 'unbound', label: 'Unassigned' }
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setIsBoundFilter(f.id)}
+                  className={cn(
+                    "px-4 h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                    isBoundFilter === f.id
+                      ? "bg-white dark:bg-slate-700 text-primary shadow-sm"
+                      : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -280,9 +308,9 @@ export default function CustomerPage() {
 
       {/* 2. Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl p-5 flex flex-col gap-4 shrink-0 shadow-sm transition-colors">
-          <ScrollArea className="flex-1">
-            <div className="space-y-2 pr-3">
+        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0 shadow-sm transition-colors">
+          <ScrollArea className="h-full w-full">
+            <div className="p-5 space-y-2">
               <button
                 type="button"
                 onClick={() => setSelectedRegionId(null)}
@@ -296,6 +324,7 @@ export default function CustomerPage() {
                 <Users className="h-4 w-4" />
                 <span>All Customers</span>
               </button>
+
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                   <Loader2 className="h-6 w-6 animate-spin text-primary/30" />
@@ -320,11 +349,12 @@ export default function CustomerPage() {
                 <Table className="table-fixed">
                   <TableHeader className="bg-transparent border-b border-slate-100 dark:border-slate-800 transition-colors">
                     <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="w-[35%] px-10 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Profile & Address</TableHead>
-                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Contact</TableHead>
-                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Region Area</TableHead>
+                      <TableHead className="w-[30%] px-10 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Profile & Address</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Status</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Contact</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Region Area</TableHead>
                       <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Created At</TableHead>
-                      <TableHead className="w-[15%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Operations</TableHead>
+                      <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ops</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -342,6 +372,13 @@ export default function CustomerPage() {
                               ID: {c.uuid}
                             </span>
                           </div>
+                        </TableCell>
+                        <TableCell className="text-center align-middle">
+                           {c.is_bound ? (
+                             <Badge className="bg-green-500/10 text-green-500 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase">Bound</Badge>
+                           ) : (
+                             <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-400 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase">Unbound</Badge>
+                           )}
                         </TableCell>
                         <TableCell className="text-center align-middle">
                           <span className="text-[13px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tight">{c.mobile}</span>
@@ -418,53 +455,76 @@ export default function CustomerPage() {
               </Card>
 
               {/* Pagination Controls */}
-              {totalCount > pageSize && (
-                <div className="flex items-center justify-between px-2 py-4">
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
-                  </p>
-                  <Pagination className="w-auto mx-0">
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
-                          className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
-                        />
-                      </PaginationItem>
+              {totalCount > 0 && (
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-8 border-t border-slate-100 dark:border-white/5">
+                  <div className="flex items-center gap-6">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest whitespace-nowrap">
+                      Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+                    </p>
 
-                      {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
-                        // Simple logic for page numbers: 1, 2, 3, 4, 5...
-                        // In a real app with 100+ pages, you'd want ellipsis logic
-                        const pageNum = i + 1;
-                        return (
-                          <PaginationItem key={pageNum}>
-                            <PaginationLink
-                              href="#"
-                              isActive={currentPage === pageNum}
-                              onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
-                            >
-                              {pageNum}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
+                    {/* Page Size Selector */}
+                    <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/5">
+                      {[20, 50, 100].map(size => (
+                        <button
+                          key={size}
+                          onClick={() => setPageSize(size)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-md text-[9px] font-black uppercase transition-all",
+                            pageSize === size
+                              ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
+                              : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          )}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-                      {Math.ceil(totalCount / pageSize) > 5 && (
+                  {totalCount > pageSize && (
+                    <Pagination className="w-auto mx-0">
+                      <PaginationContent>
                         <PaginationItem>
-                          <PaginationEllipsis />
+                          <PaginationPrevious
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
+                            className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
+                          />
                         </PaginationItem>
-                      )}
 
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
-                          className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
+                        {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
+                          // Simple logic for page numbers: 1, 2, 3, 4, 5...
+                          // In a real app with 100+ pages, you'd want ellipsis logic
+                          const pageNum = i + 1;
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                href="#"
+                                isActive={currentPage === pageNum}
+                                onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+
+                        {Math.ceil(totalCount / pageSize) > 5 && (
+                          <PaginationItem>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        )}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            href="#"
+                            onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
+                            className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
                 </div>
               )}
             </div>

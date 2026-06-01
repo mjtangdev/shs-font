@@ -2,10 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, Loader2,
+  Search, Loader2, ArrowUp,
   Package, CheckCircle2, 
-  AlertTriangle, TabletSmartphone, Lock, Unlock, Building2, Zap, Edit2, History, ShieldAlert, KeyRound, AlertCircle, ShieldCheck
+  AlertTriangle, TabletSmartphone, Lock, Unlock, Building2, Zap, Edit2, History, ShieldAlert, KeyRound, AlertCircle, ShieldCheck, Trash2
 } from 'lucide-react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import Link from 'next/link';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
@@ -47,6 +56,29 @@ export default function POSPage() {
   const [terminals, setTerminals] = useState<POSRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem("user_role"));
+  }, []);
+
+  // Back to Top logic
+  const mainRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    setShowScrollTop(scrollTop > 400);
+  };
+
+  const scrollToTop = () => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
   // --- Security Dialog States ---
   const [securityModal, setSecurityModal] = useState({
@@ -62,9 +94,15 @@ export default function POSPage() {
   const fetchTerminals = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get('/pos/');
-      const data = Array.isArray(res.data) ? res.data : (res.data.items || []);
-      setTerminals(data);
+      const res = await apiClient.get('/pos/', {
+        params: {
+          search: searchQuery || undefined,
+          skip: (currentPage - 1) * pageSize,
+          limit: pageSize
+        }
+      });
+      setTerminals(res.data.items || []);
+      setTotalCount(res.data.total || 0);
     } catch (err) {
       toast.error("DATA SYNC ERROR: POS Registry inaccessible.");
     } finally {
@@ -72,7 +110,12 @@ export default function POSPage() {
     }
   };
 
-  useEffect(() => { fetchTerminals(); }, []);
+  useEffect(() => { fetchTerminals(); }, [searchQuery, currentPage, pageSize]);
+
+  // Reset to page 1 when filters or page size change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, pageSize]);
 
   const handleSecurityAction = async () => {
     if (!securityModal.password) return toast.error("Admin password required");
@@ -94,6 +137,17 @@ export default function POSPage() {
         toast.error(err.response?.data?.detail || "Authorization failed");
     } finally {
         setSecurityModal(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const handleDeleteAsset = async (sn: string) => {
+    if (!confirm(`Are you sure you want to remove POS Terminal #${sn}?`)) return;
+    try {
+      await apiClient.delete(`/pos/${sn}`);
+      toast.success("POS removed from registry");
+      fetchTerminals();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Delete failed. Assigned devices cannot be removed.");
     }
   };
 
@@ -157,7 +211,11 @@ export default function POSPage() {
           </div>
         </aside>
 
-        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
+        <main
+          ref={mainRef}
+          onScroll={handleScroll}
+          className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10"
+        >
           <div className="max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
                 <Table className="table-fixed">
@@ -215,6 +273,18 @@ export default function POSPage() {
                                 <Button variant="ghost" size="icon" onClick={() => openSecurityModal(pos, 'unlock')} className="text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg h-9 w-9"><Unlock size={16} /></Button>
                               )}
 
+                              {(userRole === "1" || userRole === "3") && pos.status !== 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteAsset(pos.pos_sn)}
+                                  className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"
+                                  title="Delete Asset"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              )}
+
                               <Link href={`/devices/pos/logs/${pos.pos_sn}`} passHref>
                                 <Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9">
                                     <History size={16} />
@@ -227,7 +297,89 @@ export default function POSPage() {
                   </TableBody>
                 </Table>
             </Card>
+
+            {/* Pagination Controls */}
+            {totalCount > 0 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-8 border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-6">
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest whitespace-nowrap">
+                    Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+                  </p>
+
+                  {/* Page Size Selector */}
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/5">
+                    {[20, 50, 100].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setPageSize(size)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-[9px] font-black uppercase transition-all",
+                          pageSize === size
+                            ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
+                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {totalCount > pageSize && (
+                  <Pagination className="w-auto mx-0">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
+                          className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === pageNum}
+                              onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      {Math.ceil(totalCount / pageSize) > 5 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
+                          className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Back to Top Button */}
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="fixed bottom-10 right-10 z-50 w-12 h-12 rounded-2xl bg-primary/20 backdrop-blur-md text-primary border border-primary/20 shadow-xl flex items-center justify-center hover:bg-primary hover:text-slate-950 hover:scale-110 active:scale-95 transition-all animate-in fade-in zoom-in duration-300 group opacity-60 hover:opacity-100"
+            >
+              <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform" />
+            </button>
+          )}
         </main>
       </div>
 

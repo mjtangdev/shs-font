@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { 
   Search, Download, Wallet, TrendingUp, AlertCircle, 
   ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, XCircle,
   MapPin, Calendar as CalendarIcon, ChevronDown, ChevronRight, ChevronLeft, Loader2,
-  Users, Home, Building2, RefreshCcw, Copy
+  Users, Home, Building2, RefreshCcw, Copy, ArrowUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import apiClient from '@/lib/axios';
@@ -18,6 +18,15 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface RegionData {
   id: number;
@@ -221,6 +230,25 @@ export default function FinancePage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [summary, setSummary] = useState({ total_amount: 0, total_days: 0, transaction_count: 0 });
   const [isExporting, setIsExporting] = useState(false);
+  const [isSummaryExporting, setIsSummaryExporting] = useState(false);
+
+  // Back to Top logic
+  const mainRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    setShowScrollTop(scrollTop > 400);
+  };
+
+  const scrollToTop = () => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(20); // 默认改为 20
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -278,26 +306,34 @@ export default function FinancePage() {
         start_date: startDate || undefined,
         end_date: endDate || undefined,
         search: searchQuery || undefined,
+        skip: (currentPage - 1) * pageSize,
+        limit: pageSize,
       };
 
       const [txRes, sumRes] = await Promise.all([
-        apiClient.get('/finance/transactions', { params: { ...params, limit: 100 } }),
+        apiClient.get('/finance/transactions', { params }),
         apiClient.get('/finance/summary', { params })
       ]);
 
       setTransactions(txRes.data.items || []);
+      setTotalCount(txRes.data.total || 0);
       setSummary(sumRes.data);
     } catch (err) {
       toast.error("Failed to sync financial ledger");
     } finally {
       setLoading(false);
     }
-  }, [selectedRegionId, startDate, endDate, searchQuery]);
+  }, [selectedRegionId, startDate, endDate, searchQuery, currentPage, pageSize]);
 
   useEffect(() => {
     const timer = setTimeout(fetchFinanceData, 300);
     return () => clearTimeout(timer);
   }, [fetchFinanceData]);
+
+  // Reset to page 1 when filters or page size change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedRegionId, searchQuery, startDate, endDate, quickFilter, pageSize]);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -317,7 +353,7 @@ export default function FinancePage() {
       const link = document.createElement('a');
       link.href = url;
       const dateStr = new Date().toISOString().split('T')[0];
-      link.setAttribute('download', `SHS_Finance_Report_${dateStr}.csv`);
+      link.setAttribute('download', `SHS_Finance_Report_${dateStr}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -326,6 +362,33 @@ export default function FinancePage() {
       toast.error("Failed to generate report", { id: toastId });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleExportSummary = async () => {
+    setIsSummaryExporting(true);
+    const toastId = toast.loading("Generating customer financial summary...");
+    try {
+      const params = new URLSearchParams();
+      if (selectedRegionId) params.append('region_id', selectedRegionId.toString());
+
+      const response = await apiClient.get(`/finance/export-customer-summary?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `Customer_Financial_Summary_${dateStr}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Summary report downloaded successfully", { id: toastId });
+    } catch (err) {
+      toast.error("Failed to generate summary report", { id: toastId });
+    } finally {
+      setIsSummaryExporting(false);
     }
   };
 
@@ -352,17 +415,18 @@ export default function FinancePage() {
       <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
         <div className="flex items-center gap-8 flex-1">
           <Breadcrumbs items={[{ label: 'finance' }]} />
-          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-            <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
-            <input
-              type="text" placeholder="SEARCH TRANSACTIONS OR CUSTOMERS..." value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
-            />
-          </div>
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleExportSummary}
+            disabled={isSummaryExporting}
+            className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none dark:border-slate-800 dark:text-slate-300 transition-all active:scale-95"
+          >
+            {isSummaryExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <TrendingUp className="h-4 w-4 mr-2" />}
+            Financial Summary
+          </Button>
           <Button
             variant="outline"
             onClick={handleExport}
@@ -370,7 +434,7 @@ export default function FinancePage() {
             className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none dark:border-slate-800 dark:text-slate-300 transition-all active:scale-95"
           >
             {isExporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            Export Report
+            Transactions
           </Button>
           <Button
             variant="outline"
@@ -420,18 +484,22 @@ export default function FinancePage() {
           </ScrollArea>
         </aside>
 
-        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
+        <main
+          ref={mainRef}
+          onScroll={handleScroll}
+          className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10"
+        >
           <div className="max-w-[1920px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             
-            {/* Filter Controls Row (Same level as stats and table) */}
-            <div className="flex flex-wrap items-center gap-4 bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+            {/* Filter Controls Row (Sticky with glassmorphism) */}
+            <div className="sticky top-0 z-30 flex flex-wrap items-center gap-4 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md p-6 rounded-2xl border border-slate-200/60 dark:border-white/10 shadow-sm mb-8 transition-all">
                 {/* Quick Range */}
                 <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-white/5">
                   {[
+                    { id: 'ALL', label: 'All Time' },
                     { id: 'TODAY', label: 'Today' },
                     { id: 'WEEK', label: 'Week' },
-                    { id: 'MONTH', label: 'Month' },
-                    { id: 'ALL', label: 'All Time' }
+                    { id: 'MONTH', label: 'Month' }
                   ].map(f => (
                     <button
                       key={f.id}
@@ -452,7 +520,6 @@ export default function FinancePage() {
 
                 {/* Manual Range */}
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Period:</span>
                   <div className="flex items-center bg-slate-50 dark:bg-slate-950 rounded-xl p-1 gap-1 border border-slate-100 dark:border-white/5">
                     <IndustrialCalendarPicker
                       value={startDate}
@@ -472,14 +539,15 @@ export default function FinancePage() {
                   </div>
                 </div>
 
-                <Button
-                  onClick={fetchFinanceData}
-                  disabled={loading}
-                  className="h-9 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-black uppercase text-[9px] tracking-widest hover:bg-primary dark:hover:bg-primary hover:text-slate-950 transition-all active:scale-95 shadow-sm flex items-center gap-2 ml-auto"
-                >
-                  {loading ? <Loader2 size={12} className="animate-spin" /> : <Search size={14} />}
-                  Search
-                </Button>
+                <div className="relative max-w-[260px] w-full flex items-center h-10 px-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-white/5 group focus-within:ring-2 focus-within:ring-primary/20 transition-all ml-auto">
+                  <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={12} />
+                  <input
+                    type="text" placeholder="SEARCH..." value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-full bg-transparent border-none text-[9px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                  />
+                  {loading && <Loader2 className="h-3 w-3 animate-spin text-primary/40 shrink-0 ml-2" />}
+                </div>
             </div>
 
             {/* Stats Grid */}
@@ -487,13 +555,15 @@ export default function FinancePage() {
               {stats.map((stat, i) => (
                 <Card key={i} className="bg-white dark:bg-slate-900/60 rounded-2xl p-6 border-none shadow-sm dark:shadow-none relative overflow-hidden group hover:-translate-y-1 transition-all duration-300 cursor-default flex items-center gap-5">
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] pr-2">{stat.label}</p>
-                      <div className={cn("flex items-center gap-0.5 text-[10px] font-black tracking-tighter", stat.isPositive ? "text-green-500" : "text-red-500")}>
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">{stat.label}</p>
+                      <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-50 dark:bg-white/5 text-[8px] font-black tracking-tighter", stat.isPositive ? "text-green-500" : "text-red-500")}>
                         {stat.trend}
                       </div>
                     </div>
-                    <h3 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-slate-100 truncate">{stat.value}</h3>
+                    <h3 className="text-xl font-black italic tracking-tighter text-slate-900 dark:text-slate-100 tabular-nums leading-none">
+                      {stat.value}
+                    </h3>
                   </div>
                 </Card>
               ))}
@@ -573,7 +643,83 @@ export default function FinancePage() {
                 </TableBody>
               </Table>
             </Card>
+
+            {/* Pagination Controls */}
+            {totalCount > 0 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-8 border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-6">
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest whitespace-nowrap">
+                    Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+                  </p>
+
+                  {/* Page Size Selector */}
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/5">
+                    {[20, 50, 100].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setPageSize(size)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-[9px] font-black uppercase transition-all",
+                          pageSize === size
+                            ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
+                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {totalCount > pageSize && (
+                  <Pagination className="w-auto mx-0">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
+                        className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
+                      />
+                    </PaginationItem>
+
+                    {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
+                      const pageNum = i + 1;
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            href="#"
+                            isActive={currentPage === pageNum}
+                            onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
+                        className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Back to Top Button */}
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="fixed bottom-10 right-10 z-50 w-12 h-12 rounded-2xl bg-primary/20 backdrop-blur-md text-primary border border-primary/20 shadow-xl flex items-center justify-center hover:bg-primary hover:text-slate-950 hover:scale-110 active:scale-95 transition-all animate-in fade-in zoom-in duration-300 group opacity-60 hover:opacity-100"
+            >
+              <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform" />
+            </button>
+          )}
         </main>
       </div>
     </div>

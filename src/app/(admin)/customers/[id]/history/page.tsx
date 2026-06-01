@@ -22,9 +22,38 @@ export default function CustomerHistoryPage() {
   const customerId = params.id;
 
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [customer, setCustomer] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [summary, setSummary] = useState({ total_amount: 0, transaction_count: 0 });
+
+  const handleExport = async () => {
+    if (!customer?.uuid) return;
+    setIsExporting(true);
+    const toastId = toast.loading("Generating customer financial report...");
+    try {
+      const params = new URLSearchParams();
+      params.append('customer_uuid', customer.uuid);
+
+      const response = await apiClient.get(`/finance/export?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `SHS_History_${customer.first_name}_${customer.last_name}_${dateStr}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Report downloaded successfully", { id: toastId });
+    } catch (err) {
+      toast.error("Failed to generate report", { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -116,8 +145,14 @@ export default function CustomerHistoryPage() {
         <Card className="border-none shadow-sm rounded-[32px] overflow-hidden bg-white dark:bg-slate-900/60">
           <div className="p-10 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
              <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">Transaction Ledger</h3>
-             <Button variant="outline" className="rounded-xl font-black uppercase text-[10px] tracking-widest h-10 border-slate-100 dark:border-slate-800">
-               <Download size={14} className="mr-2" /> Export CSV
+             <Button
+               variant="outline"
+               onClick={handleExport}
+               disabled={isExporting}
+               className="rounded-xl font-black uppercase text-[10px] tracking-widest h-10 border-slate-100 dark:border-slate-800"
+             >
+               {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download size={14} className="mr-2" />}
+               Export Excel
              </Button>
           </div>
           <Table>

@@ -5,3 +5,5 @@ node_modules
 manual
 manual.zip
 src/middleware.ts
+*.sh
+*.bat

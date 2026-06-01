@@ -125,8 +125,8 @@ export function Navbar() {
                 </div>
               )}
 
-              {/* 2. Users 逻辑：1,2 是下拉；3 是单图标 */}
-              {(IS_ADMIN || IS_OPERATOR) ? (
+              {/* 2. Users 逻辑：ADMIN 是下拉；OPERATOR 和 FINANCE 是单图标 */}
+              {IS_ADMIN ? (
                 <div onMouseEnter={() => setOpenUser(true)} onMouseLeave={() => setOpenUser(false)}>
                   <DropdownMenu open={openUser} onOpenChange={setOpenUser}>
                     <DropdownMenuTrigger asChild>
@@ -142,7 +142,7 @@ export function Navbar() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              ) : IS_FINANCE ? (
+              ) : (IS_OPERATOR || IS_FINANCE) ? (
                 <Link href="/customers" className={`${navItemStyles} ${pathname.includes('/customers') ? activeStyles : inactiveStyles}`}>
                   <UserSquare size={19} />
                   <span>Customers</span>

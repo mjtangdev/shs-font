@@ -3,11 +3,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Search, Loader2,
-  Package, CheckCircle2, 
+  Package, CheckCircle2,
   AlertTriangle, MapPin, FileDown,
   Zap, Lock, Unlock, Building2, Layers,
-  RefreshCcw, ChevronDown, ChevronRight, ChevronLeft, Home, Users
+  RefreshCcw, ChevronDown, ChevronRight, ChevronLeft, Home, Users, ArrowUp, Trash2
 } from 'lucide-react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import Link from 'next/link';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
@@ -136,6 +145,11 @@ function RegionNode({
 
 export default function SolarUnitPage() {
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem("user_role"));
+  }, []);
   const [isListLoading, setIsListLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [units, setUnits] = useState<SolarDeviceRecord[]>([]);
@@ -143,7 +157,24 @@ export default function SolarUnitPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Back to Top logic
+  const mainRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    setShowScrollTop(scrollTop > 400);
+  };
+
+  const scrollToTop = () => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
   const fetchRegions = useCallback(async () => {
     try {
@@ -162,11 +193,13 @@ export default function SolarUnitPage() {
         params: {
           region_id: selectedRegionId || undefined,
           search: searchQuery || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter
+          status: statusFilter === 'all' ? undefined : statusFilter,
+          skip: (currentPage - 1) * pageSize,
+          limit: pageSize,
         }
       });
-      const data = res.data.items || (Array.isArray(res.data) ? res.data : []);
-      setUnits(Array.isArray(data) ? data : []);
+      setUnits(res.data.items || []);
+      setTotalCount(res.data.total || 0);
     } catch (err) {
       console.error(err);
       toast.error("SYSTEM SYNC ERROR: Solar registry inaccessible.");
@@ -174,7 +207,18 @@ export default function SolarUnitPage() {
       setIsListLoading(false);
       setLoading(false);
     }
-  }, [selectedRegionId, statusFilter, searchQuery]);
+  }, [selectedRegionId, statusFilter, searchQuery, currentPage, pageSize]);
+
+  const handleDelete = async (unitId: number, machineId: string) => {
+    if (!confirm(`Are you sure you want to remove Machine #${machineId} from registry?`)) return;
+    try {
+      await apiClient.delete(`/solar_device/${unitId}`);
+      toast.success("Device removed from assets");
+      fetchUnits();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Delete failed. Active devices cannot be removed.");
+    }
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -191,7 +235,7 @@ export default function SolarUnitPage() {
       const link = document.createElement('a');
       link.href = url;
       const date = new Date().toISOString().split('T')[0];
-      link.setAttribute('download', `shs-solar-unit_${date}.csv`);
+      link.setAttribute('download', `shs-solar-unit_${date}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -205,6 +249,11 @@ export default function SolarUnitPage() {
 
   useEffect(() => { fetchRegions(); }, [fetchRegions]);
   useEffect(() => { fetchUnits(); }, [fetchUnits]);
+
+  // Reset to page 1 when filter, search, or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedRegionId, statusFilter, searchQuery, pageSize]);
 
   // Handle Dev Alert
   const handleDevAlert = () => {
@@ -251,92 +300,75 @@ export default function SolarUnitPage() {
 
       {/* 2. Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className={cn(
-          "relative z-10 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0 shadow-sm transition-all duration-300",
-          isSidebarCollapsed ? "w-16" : "w-80"
-        )}>
-          {/* Toggle Button */}
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="absolute -right-3 top-6 w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center z-30 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-          >
-            {isSidebarCollapsed ? <ChevronRight size={12} className="dark:text-slate-400" /> : <ChevronLeft size={12} className="dark:text-slate-400" />}
-          </button>
-
-          {!isSidebarCollapsed ? (
-            <ScrollArea className="flex-1 p-5">
-              <div className="space-y-6">
-                {/* Status Filter Section */}
-                <div className="space-y-2">
-                  <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Status Protocol</h3>
+        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0 shadow-sm transition-all duration-300">
+          <ScrollArea className="h-full w-full">
+            <div className="p-5 space-y-6">
+              {/* Status Filter Section */}
+              <div className="space-y-2">
+                <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Status Protocol</h3>
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border",
+                    statusFilter === 'all' ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xl scale-[1.02]" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
+                  )}
+                >
+                  <Layers className="h-4 w-4" /><span>Full Registry</span>
+                </button>
+                {[0, 1, 3].map((sId) => (
                   <button
-                    onClick={() => setStatusFilter('all')}
+                    key={sId}
+                    onClick={() => setStatusFilter(sId.toString())}
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border",
-                      statusFilter === 'all' ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xl scale-[1.02]" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
+                      statusFilter === sId.toString() ? "bg-primary text-white border-transparent shadow-lg shadow-primary/20" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
                     )}
                   >
-                    <Layers className="h-4 w-4" /><span>Full Registry</span>
+                    {STATUS_MAP[sId].icon}
+                    <span>{STATUS_MAP[sId].label}</span>
                   </button>
-                  {[0, 1, 3].map((sId) => (
+                ))}
+              </div>
+
+              {statusFilter === '1' && (
+                <>
+                  <div className="h-px bg-slate-100 dark:bg-slate-800 mx-4" />
+
+                  {/* Regional Filter Section - Focused on Deployment */}
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Regional Filter</h3>
                     <button
-                      key={sId}
-                      onClick={() => setStatusFilter(sId.toString())}
+                      onClick={() => setSelectedRegionId(null)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border",
-                        statusFilter === sId.toString() ? "bg-primary text-white border-transparent shadow-lg shadow-primary/20" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-2",
+                        selectedRegionId === null ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400"
                       )}
                     >
-                      {STATUS_MAP[sId].icon}
-                      <span>{STATUS_MAP[sId].label}</span>
+                      <Users className="h-4 w-4" /><span>Global View</span>
                     </button>
-                  ))}
-                </div>
 
-                {statusFilter === '1' && (
-                  <>
-                    <div className="h-px bg-slate-100 dark:bg-slate-800 mx-4" />
-
-                    {/* Regional Filter Section - Focused on Deployment */}
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Regional Filter</h3>
-                      <button
-                        onClick={() => setSelectedRegionId(null)}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-2",
-                          selectedRegionId === null ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400"
-                        )}
-                      >
-                        <Users className="h-4 w-4" /><span>Global View</span>
-                      </button>
-
-                      {regions.map((node) => (
-                        <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="flex flex-col items-center pt-10 gap-6">
-              <Layers className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === 'all' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('all'); setIsSidebarCollapsed(false);}} size={20} />
-              <CheckCircle2 className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === '1' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('1'); setIsSidebarCollapsed(false);}} size={20} />
-              <Package className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === '0' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('0'); setIsSidebarCollapsed(false);}} size={20} />
-              {statusFilter === '1' && (
-                <MapPin className={cn("cursor-pointer hover:text-primary transition-colors animate-in zoom-in duration-300", selectedRegionId !== null ? "text-primary" : "text-slate-400")} onClick={() => setIsSidebarCollapsed(false)} size={20} />
+                    {regions.map((node) => (
+                      <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
-          )}
+          </ScrollArea>
         </aside>
 
-        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
+        <main
+          ref={mainRef}
+          onScroll={handleScroll}
+          className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10"
+        >
           <div className="max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
                 <Table className="table-fixed">
                   <TableHeader className="bg-transparent border-b border-slate-100 dark:border-slate-800 transition-colors">
                     <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="w-[40%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">SHS Machine Identity & Components</TableHead>
+                      <TableHead className="w-[5%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">#</TableHead>
+                      <TableHead className="w-[35%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">SHS Machine Identity & Components</TableHead>
                       <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Deployment</TableHead>
                       <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Status</TableHead>
                       <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Production</TableHead>
@@ -346,7 +378,7 @@ export default function SolarUnitPage() {
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                     {loading ? (
                        <TableRow>
-                          <TableCell colSpan={5} className="h-[400px] text-center">
+                          <TableCell colSpan={6} className="h-[400px] text-center">
                               <div className="flex flex-col items-center justify-center gap-4 text-slate-300 italic">
                                 <Loader2 className="animate-spin text-primary" size={40} />
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Syncing Registry...</span>
@@ -355,15 +387,18 @@ export default function SolarUnitPage() {
                        </TableRow>
                     ) : filteredUnits.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="h-[400px] text-center opacity-30">
+                          <TableCell colSpan={6} className="h-[400px] text-center opacity-30">
                               <div className="flex flex-col items-center justify-center gap-4">
                                 <Layers size={48} strokeWidth={1} className="dark:text-slate-400" />
                                 <span className="text-[11px] font-black uppercase tracking-[0.4em] dark:text-slate-400">No Assets Found</span>
                               </div>
                           </TableCell>
                         </TableRow>
-                    ) : filteredUnits.map((unit) => (
+                    ) : filteredUnits.map((unit, idx) => (
                       <TableRow key={unit.id} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
+                        <TableCell className="py-8 px-8 text-center align-middle font-black italic text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                          {(currentPage - 1) * pageSize + idx + 1}
+                        </TableCell>
                         <TableCell className="py-8 px-8 align-middle">
                           <div className="flex items-start gap-6">
                               <div className={cn(
@@ -445,7 +480,17 @@ export default function SolarUnitPage() {
                         <TableCell className="py-8 px-8 pr-8 text-right align-middle">
                           <div className="flex items-center justify-end gap-2">
                               <Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9"><MapPin size={16} /></Button>
-                              <Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"><Lock size={16} /></Button>
+                              {(userRole === "1" || userRole === "3") && unit.status !== 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDelete(unit.id, unit.shs_machine_id)}
+                                  className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"
+                                  title="Delete Asset"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -453,7 +498,89 @@ export default function SolarUnitPage() {
                   </TableBody>
                 </Table>
             </Card>
+
+            {/* Pagination Controls */}
+            {totalCount > 0 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-8 border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-6">
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest whitespace-nowrap">
+                    Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+                  </p>
+
+                  {/* Page Size Selector */}
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/5">
+                    {[20, 50, 100].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setPageSize(size)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-[9px] font-black uppercase transition-all",
+                          pageSize === size
+                            ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
+                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {totalCount > pageSize && (
+                  <Pagination className="w-auto mx-0">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
+                          className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === pageNum}
+                              onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      {Math.ceil(totalCount / pageSize) > 5 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
+                          className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Back to Top Button */}
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="fixed bottom-10 right-10 z-50 w-12 h-12 rounded-2xl bg-primary/20 backdrop-blur-md text-primary border border-primary/20 shadow-xl flex items-center justify-center hover:bg-primary hover:text-slate-950 hover:scale-110 active:scale-95 transition-all animate-in fade-in zoom-in duration-300 group opacity-60 hover:opacity-100"
+            >
+              <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform" />
+            </button>
+          )}
         </main>
       </div>
     </div>

@@ -2,12 +2,22 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Plus, Search, Loader2,
+  Plus, Search, Loader2, ArrowUp,
   Package, CheckCircle2,
   AlertTriangle, MapPin, FileDown,
   RefreshCcw, CreditCard,
-  ChevronDown, ChevronRight, ChevronLeft, Home, Users
+  ChevronDown, ChevronRight, ChevronLeft, Home, Users, Pencil, Trash2
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import Link from 'next/link';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
@@ -124,7 +134,7 @@ function RegionNode({
       {hasChildren && (isMunicipality || isOpen) && (
         <div className="relative my-0.5">
           {node.children.map((child) => (
-            <RegionNode key={child.id} node={child} selectedId={selectedId} onSelect={setSelectedId} depth={depth + 1} />
+            <RegionNode key={child.id} node={child} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />
           ))}
         </div>
       )}
@@ -138,7 +148,13 @@ const setSelectedId = (id: number | null) => {}; // This was missing in the temp
 import { Building2 } from 'lucide-react';
 
 export default function CardsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem("user_role"));
+  }, []);
   const [isListLoading, setIsListLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [cards, setCards] = useState<CardRecord[]>([]);
@@ -147,6 +163,24 @@ export default function CardsPage() {
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Back to Top logic
+  const mainRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    setShowScrollTop(scrollTop > 400);
+  };
+
+  const scrollToTop = () => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
   const fetchRegions = useCallback(async () => {
     try {
@@ -165,11 +199,13 @@ export default function CardsPage() {
         params: {
           region_id: selectedRegionId || undefined,
           search: searchQuery || undefined,
-          status: statusFilter === 'all' ? undefined : statusFilter
+          status: statusFilter === 'all' ? undefined : statusFilter,
+          skip: (currentPage - 1) * pageSize,
+          limit: pageSize,
         }
       });
-      const data = res.data.items || (Array.isArray(res.data) ? res.data : []);
-      setCards(Array.isArray(data) ? data : []);
+      setCards(res.data.items || []);
+      setTotalCount(res.data.total || 0);
     } catch (err) {
       console.error(err);
       toast.error("ASSET SYNC ERROR: Card registry inaccessible.");
@@ -177,7 +213,7 @@ export default function CardsPage() {
       setIsListLoading(false);
       setLoading(false);
     }
-  }, [selectedRegionId, statusFilter, searchQuery]);
+  }, [selectedRegionId, statusFilter, searchQuery, currentPage, pageSize]);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -195,7 +231,7 @@ export default function CardsPage() {
       const link = document.createElement('a');
       link.href = url;
       const date = new Date().toISOString().split('T')[0];
-      link.setAttribute('download', `shs-iccard_${date}.csv`);
+      link.setAttribute('download', `shs-iccard_${date}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -210,6 +246,22 @@ export default function CardsPage() {
   useEffect(() => { fetchRegions(); }, [fetchRegions]);
   useEffect(() => { fetchCards(); }, [fetchCards]);
 
+  // Reset to page 1 when filter, search, or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedRegionId, statusFilter, searchQuery, pageSize]);
+
+  const handleDelete = async (cardId: number, cardNo: string) => {
+    if (!confirm(`Are you sure you want to remove card #${cardNo}?`)) return;
+    try {
+      await apiClient.delete(`/card/${cardId}`);
+      toast.success("Card removed from registry");
+      fetchCards();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Delete failed. Active cards cannot be removed.");
+    }
+  };
+
   const filteredCards = cards || [];
 
   return (
@@ -218,11 +270,16 @@ export default function CardsPage() {
       {/* 1. Top Header */}
       <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
         <div className="flex items-center gap-8 flex-1">
-          <Breadcrumbs items={[{ label: "ic card assets" }]} />
+          <div className="flex items-center gap-4">
+            <Breadcrumbs items={[{ label: "ic card assets" }]} />
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-widest animate-in fade-in zoom-in duration-500">
+              {totalCount} Total
+            </Badge>
+          </div>
           <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
             <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
             <input 
-              type="text" placeholder="SEARCH BY CARD SN OR UUID..." value={searchQuery}
+              type="text" placeholder="SEARCH BY CARD NO. OR UUID..." value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
             />
@@ -260,8 +317,8 @@ export default function CardsPage() {
           </button>
 
           {!isSidebarCollapsed ? (
-            <ScrollArea className="flex-1 p-5">
-              <div className="space-y-6">
+            <ScrollArea className="h-full w-full">
+              <div className="p-5 space-y-6">
                 {/* Status Filter Section */}
                 <div className="space-y-2">
                   <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Status Filter</h3>
@@ -308,23 +365,28 @@ export default function CardsPage() {
           )}
         </aside>
 
-        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
+        <main
+          ref={mainRef}
+          onScroll={handleScroll}
+          className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10"
+        >
           <div className="max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
                 <Table>
                   <TableHeader className="bg-transparent border-b border-slate-100 dark:border-slate-800 transition-colors">
                     <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="w-[8%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Type</TableHead>
-                      <TableHead className="w-[32%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Physical Identity</TableHead>
-                      <TableHead className="w-[30%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ownership / Customer</TableHead>
+                      <TableHead className="w-[5%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">#</TableHead>
+                      <TableHead className="w-[30%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Physical Identity</TableHead>
+                      <TableHead className="w-[27%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ownership / Customer</TableHead>
                       <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Protocol Dates</TableHead>
-                      <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Actions</TableHead>
+                      <TableHead className="w-[10%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Type</TableHead>
+                      <TableHead className="w-[8%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-[400px] text-center">
+                        <TableCell colSpan={6} className="h-[400px] text-center">
                             <div className="flex flex-col items-center justify-center gap-4 text-slate-300 italic">
                               <Loader2 className="animate-spin text-primary" size={40} />
                               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Scanning RFID Registry...</span>
@@ -333,41 +395,38 @@ export default function CardsPage() {
                       </TableRow>
                     ) : filteredCards.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-[400px] text-center opacity-30">
+                        <TableCell colSpan={6} className="h-[400px] text-center opacity-30">
                             <div className="flex flex-col items-center justify-center gap-4">
                               <CreditCard size={48} strokeWidth={1} className="dark:text-slate-400" />
                               <span className="text-[11px] font-black uppercase tracking-[0.4em] dark:text-slate-400">No Cards Found</span>
                             </div>
                         </TableCell>
                       </TableRow>
-                    ) : filteredCards.map((card) => (
+                    ) : filteredCards.map((card, idx) => (
                       <TableRow key={card.id} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
-                        <TableCell className="py-7 px-8 text-center align-middle">
-                          <div className={cn("inline-flex p-3 rounded-xl border transition-all",
-                             card.status === 1 ? "bg-primary/5 border-primary/20 text-primary" : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 text-slate-400")}>
-                            {STATUS_MAP[card.status]?.icon || <CreditCard size={18} />}
-                          </div>
+                        <TableCell className="py-7 px-8 text-center align-middle font-black italic text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                          {(currentPage - 1) * pageSize + idx + 1}
                         </TableCell>
                         <TableCell className="px-8 align-middle">
                           <div className="flex flex-col gap-0.5">
-                            <span className="font-black uppercase italic tracking-tighter text-[15px] leading-tight text-slate-900 dark:text-white group-hover:text-primary transition-colors">SN: {card.card_number}</span>
-                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest font-mono">UUID: {card.card_uuid}</span>
+                            <span className="font-black uppercase italic tracking-tighter text-[15px] leading-tight text-primary dark:text-primary group-hover:brightness-110 transition-colors">UUID: {card.card_uuid}</span>
+                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest font-mono">Card No: {card.card_number}</span>
                           </div>
                         </TableCell>
                         <TableCell className="px-8 align-middle">
                           {card.customer_id ? (
                             <Link
                                 href={`/customers/${card.customer_id}`}
-                                className="group/cust flex flex-col gap-1.5 hover:opacity-80 transition-opacity"
+                                className="group/cust flex flex-col gap-0.5 hover:opacity-80 transition-opacity"
                             >
-                              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter text-slate-900 dark:text-white group-hover/cust:text-primary transition-colors">
-                                 <CheckCircle2 size={12} className="text-green-500" /> {card.customer_name}
+                              <div className="text-[15px] font-black uppercase italic tracking-tighter text-slate-900 dark:text-white group-hover/cust:text-primary transition-colors leading-tight">
+                                 {card.customer_name}
                               </div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-widest uppercase italic">
+                              <div className="flex items-center gap-3">
+                                <span className="text-[8px] font-bold text-slate-400/60 uppercase">Cust ID: {card.customer_uuid}</span>
+                                <div className="flex items-center gap-1.5 text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-widest uppercase italic">
                                    <MapPin size={10} /> {card.city_name} / {card.town_name}
                                 </div>
-                                <span className="text-[8px] font-bold text-slate-400 group-hover/cust:text-primary/70 transition-colors uppercase">ID: {card.customer_uuid}</span>
                               </div>
                             </Link>
                           ) : (
@@ -376,14 +435,39 @@ export default function CardsPage() {
                         </TableCell>
                         <TableCell className="px-8 text-center align-middle">
                           <div className="inline-flex flex-col gap-1 text-[9px] font-black uppercase tracking-widest text-slate-400 italic leading-none">
-                            <div className="flex items-center justify-center gap-2">IN: {card.created_at?.split(' ')[0]}</div>
-                            {card.bound_at && <div className="flex items-center justify-center gap-2 text-primary font-bold underline underline-offset-2">OUT: {card.bound_at.split(' ')[0]}</div>}
+                            <div className="flex items-center justify-center gap-2">IN: {card.created_at?.replace('T', ' ').slice(0, 13)}:00</div>
+                            {card.bound_at && <div className="flex items-center justify-center gap-2 text-primary font-bold underline underline-offset-2">OUT: {card.bound_at.replace('T', ' ').slice(0, 13)}:00</div>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-7 px-8 text-center align-middle">
+                          <div className={cn("inline-flex p-3 rounded-xl border transition-all",
+                             card.status === 1 ? "bg-primary/5 border-primary/20 text-primary" : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 text-slate-400")}>
+                            {STATUS_MAP[card.status]?.icon || <CreditCard size={18} />}
                           </div>
                         </TableCell>
                         <TableCell className="py-7 px-8 pr-8 text-right align-middle">
-                          <Button variant="ghost" size="icon" onClick={() => toast.info("PROTOCOL: Edit function locked.")} className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white rounded-lg h-9 w-9">
-                            <Plus className="rotate-45" size={16} />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => router.push(`/devices/card/edit/${card.id}`)}
+                              className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9"
+                              title="Edit Card"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            {(userRole === "1" || userRole === "3") && card.status !== 1 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(card.id, card.card_number)}
+                                className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"
+                                title="Delete Card"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -400,7 +484,89 @@ export default function CardsPage() {
                   </TableBody>
                 </Table>
             </Card>
+
+            {/* Pagination Controls */}
+            {totalCount > 0 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-8 border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-6">
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest whitespace-nowrap">
+                    Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+                  </p>
+
+                  {/* Page Size Selector */}
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/5">
+                    {[20, 50, 100].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setPageSize(size)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-[9px] font-black uppercase transition-all",
+                          pageSize === size
+                            ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
+                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {totalCount > pageSize && (
+                  <Pagination className="w-auto mx-0">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
+                          className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === pageNum}
+                              onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      {Math.ceil(totalCount / pageSize) > 5 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
+                          className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* Back to Top Button */}
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="fixed bottom-10 right-10 z-50 w-12 h-12 rounded-2xl bg-primary/20 backdrop-blur-md text-primary border border-primary/20 shadow-xl flex items-center justify-center hover:bg-primary hover:text-slate-950 hover:scale-110 active:scale-95 transition-all animate-in fade-in zoom-in duration-300 group opacity-60 hover:opacity-100"
+            >
+              <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform" />
+            </button>
+          )}
         </main>
       </div>
     </div>
