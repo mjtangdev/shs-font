@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { toast } from "sonner";
 import apiClient from '@/lib/axios';
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 import {
   Dialog,
@@ -88,13 +89,22 @@ export default function CreateUserPage() {
     if (formData.password !== confirmPassword) return toast.error("Passwords do not match");
     if (!formData.mobile.trim()) return toast.error("Mobile number is required");
     if (!formData.email.trim()) return toast.error("Email address is required");
-    if (!formData.region_id) return toast.error("Please assign a regional node");
+
+    // 业务逻辑：业务员必须选择地区，管理员/财务可选（后端默认为1）
+    if (formData.role === 2 && !formData.region_id) {
+        return toast.error("Please assign a regional node for Operator");
+    }
 
     setLoading(true);
 
     try {
       // 提交原始数据，后端现在强制校验格式
-      await apiClient.post('/user/', formData);
+      const payload = { ...formData };
+      if (formData.role !== 2 && !formData.region_id) {
+          payload.region_id = 1; // 默认分配到总部
+      }
+
+      await apiClient.post('/user/', payload);
 
       toast.success("User identity authorized and deployed successfully");
       
@@ -326,29 +336,31 @@ export default function CreateUserPage() {
               </div>
             </div>
 
-            {/* 地区选择 */}
-            <div className="space-y-3">
-              <label className={labelStyles}>Assigned Region *</label>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <button type="button" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between group hover:border-slate-400 focus:border-primary transition-all text-left">
-                    <span className={cn("text-lg font-bold", formData.region_id ? "text-slate-900" : "text-slate-300 italic")}>
-                      {formData.region_name || "Assign regional node..."}
-                    </span>
-                    <ChevronDown size={24} className="text-slate-300 group-hover:text-slate-900" />
-                  </button>
-                </DialogTrigger>
-                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
-                  <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
-                    <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Select Region</DialogTitle>
-                    <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
-                  </DialogHeader>
-                  <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
-                    {fetchingRegions ? <Loader2 className="animate-spin text-primary mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+            {/* 地区选择 - 仅针对业务员显示或必填 */}
+            {formData.role === 2 && (
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                <label className={labelStyles}>Assigned Region *</label>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <button type="button" className="w-full h-16 px-6 border-2 border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between group hover:border-slate-400 focus:border-primary transition-all text-left">
+                      <span className={cn("text-lg font-bold", formData.region_id ? "text-slate-900" : "text-slate-300 italic")}>
+                        {formData.region_name || "Assign regional node..."}
+                      </span>
+                      <ChevronDown size={24} className="text-slate-300 group-hover:text-slate-900" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
+                    <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
+                      <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Select Region</DialogTitle>
+                      <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>
+                    </DialogHeader>
+                    <div className="h-[400px] overflow-y-auto px-4 py-6 bg-white dark:bg-slate-900/60">
+                      {fetchingRegions ? <Loader2 className="animate-spin text-primary mx-auto mt-20" /> : <div className="space-y-1">{renderTreeRows(regions)}</div>}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
 
             {/* 联系信息（必填） */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-slate-50 dark:border-slate-800/50">

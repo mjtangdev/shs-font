@@ -6,9 +6,10 @@ import {
   UserCircle2, Building2, Edit2,
   Loader2, Construction, Wallet, Shield,
   Mail, Phone, Users, ChevronDown, ChevronRight, MapPin, Home,
-  RefreshCcw, Briefcase, Trash2, Lock, KeyRound, Eye, EyeOff
+  RefreshCcw, Briefcase, Trash2, Lock, KeyRound, Eye, EyeOff, Pencil, Globe
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,8 @@ interface UserRecord {
   entity_name?: string;
   region_id?: number;
   pos_sn?: string; // 新增：绑定的 POS SN
+  city_name?: string;
+  town_name?: string;
 }
 
 interface RegionData {
@@ -137,6 +140,7 @@ function RegionNode({
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -322,32 +326,8 @@ export default function UsersPage() {
         </div>
       </header>
 
-      {/* 2. Main Area with Sidebar */}
+      {/* 2. Main Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Sidebar: Region Filter */}
-        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800/50 bg-white/90 dark:bg-slate-950/50 backdrop-blur-xl p-5 flex flex-col gap-4 shrink-0 shadow-sm transition-colors">
-          <ScrollArea className="flex-1">
-            <div className="space-y-2 pr-3">
-              <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-600 mb-2">Regional Assignment</h3>
-              <button
-                onClick={() => setSelectedRegionId(null)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-6 text-sm font-bold border",
-                  selectedRegionId === null
-                    ? "bg-slate-900 text-white border-slate-900 shadow-xl dark:bg-white dark:text-slate-900 dark:border-white scale-[1.02]"
-                    : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
-                )}
-              >
-                <Users className="h-4 w-4" />
-                <span>All Locations</span>
-              </button>
-              {regions.map((node) => (
-                <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
-              ))}
-            </div>
-          </ScrollArea>
-        </aside>
-
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10">
           <div className="max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -361,17 +341,20 @@ export default function UsersPage() {
                 <Table className="table-fixed">
                   <TableHeader className="bg-transparent border-b border-slate-100 dark:border-white/5 transition-colors">
                     <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">User Identity</TableHead>
+                      <TableHead className="w-[25%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">User Identity</TableHead>
                       <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Contact</TableHead>
-                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Assignment & Role</TableHead>
-                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Asset</TableHead>
-                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Auth Status</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Role & Entity</TableHead>
+                      <TableHead className="w-[25%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Jurisdiction</TableHead>
                       <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
                     {filteredUsers.map((user) => (
-                      <TableRow key={user.id} className="group hover:bg-slate-50 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
+                      <TableRow
+                        key={user.id}
+                        onClick={() => router.push(`/users/${user.id}`)}
+                        className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03] cursor-pointer"
+                      >
                         <TableCell className="py-5 px-8 align-middle">
                           <div className="flex flex-col gap-0.5">
                              <span className="font-black uppercase italic tracking-tighter text-slate-900 dark:text-white text-[15px] leading-tight group-hover:text-primary transition-colors">
@@ -400,26 +383,35 @@ export default function UsersPage() {
                           </div>
                         </TableCell>
                         <TableCell className="px-8 align-middle text-center">
-                           {user.pos_sn ? (
-                             <div className="flex flex-col items-center">
-                                <span className="text-[10px] font-black uppercase text-primary italic">POS Bound</span>
-                                <span className="text-[9px] font-mono text-slate-400">SN: {user.pos_sn}</span>
-                             </div>
-                           ) : (
-                             <span className="text-[9px] font-black uppercase text-slate-300 dark:text-slate-700 italic">No Device</span>
-                           )}
-                        </TableCell>
-                        <TableCell className="px-8 align-middle text-center">
-                          <Badge variant="outline" className={cn("px-4 py-1 rounded-full font-black text-[9px] uppercase border-2 mx-auto", user.is_active ? "bg-green-50 text-green-600 border-green-100 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20" : "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20")}>
-                             {user.is_active ? 'Authorized' : 'Suspended'}
-                          </Badge>
+                          {user.role === 2 ? (
+                            <div className="inline-flex flex-col gap-1 items-center bg-slate-50 dark:bg-white/5 px-4 py-2 rounded-xl border border-slate-100 dark:border-white/5">
+                               <div className="flex items-center gap-2 text-[11px] font-black uppercase italic text-slate-900 dark:text-white">
+                                  <MapPin size={12} className="text-primary" />
+                                  {user.city_name || 'N/A'}
+                               </div>
+                               {user.town_name && (
+                                 <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
+                                   {user.town_name}
+                                 </span>
+                               )}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-1">
+                               <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-900 dark:text-slate-100 uppercase italic tracking-widest">
+                                  <Globe size={12} className="text-primary" />
+                                  {user.city_name || user.entity_name || regions[0]?.name || 'CENTRAL HQ'}
+                               </div>
+                               <span className="text-[8px] font-black uppercase text-slate-300 dark:text-slate-700 tracking-[0.2em] italic">Full Authority</span>
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right pr-8 align-middle">
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setUserToReset(user);
                                 setNewPassword("");
                                 setIsResetResetPasswordOpen(true);
@@ -429,14 +421,39 @@ export default function UsersPage() {
                             >
                               <KeyRound size={14} />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setShowDevModal(true)} className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all">
-                              <Edit2 size={14} />
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/users/${user.id}`);
+                              }}
+                              className="text-slate-300 dark:text-slate-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                              title="View Details"
+                            >
+                              <Eye size={14} />
                             </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/users/${user.id}?edit=true`);
+                              }}
+                              className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
+                              title="Edit Profile"
+                            >
+                              <Pencil size={14} />
+                            </Button>
+
                             {(userRole === "1" || userRole === "3") && (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => {
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setUserToDelete(user);
                                     setDeletePassword("");
                                     setIsDeleteDialogOpen(true);
@@ -457,34 +474,47 @@ export default function UsersPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
                 {filteredUsers.map((user) => (
-                  <Card key={user.id} onClick={() => setShowDevModal(true)} className="group bg-white dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-100 dark:border-slate-800/50 shadow-sm dark:shadow-none hover:shadow-lg dark:hover:border-slate-700 hover:-translate-y-1 transition-all duration-500 relative flex flex-col min-h-[280px] cursor-pointer">
-                    <div className="absolute top-6 right-6">
-                       <Badge className={cn("px-3 py-1 rounded-full font-black text-[8px] uppercase border-none", ROLE_MAP[user.role]?.badgeVariant)}>
-                        {ROLE_MAP[user.role]?.label}
-                      </Badge>
-                    </div>
-                    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-6 shadow-inner text-slate-900 dark:text-white group-hover:bg-primary group-hover:text-white transition-all duration-500">
-                      <UserCircle2 size={24} />
-                    </div>
-                    <div className="flex-grow">
-                      <h3 className="text-lg font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100 leading-tight group-hover:text-primary transition-colors">
-                        {(user.first_name || '')} {(user.last_name || '')}
-                      </h3>
-                      <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">@{user.username}</p>
-                    </div>
-                    <div className="mt-6 pt-5 border-t border-slate-50 dark:border-slate-800/50 space-y-3">
-                      <div className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-                        <Building2 size={12} className="text-primary" />
-                        <span className="text-[8px] font-black uppercase tracking-widest italic">{user.entity_name || 'CENTRAL'}</span>
+                    <Card key={user.id} className="group bg-white dark:bg-slate-900/60 rounded-2xl p-6 border border-slate-100 dark:border-slate-800/50 shadow-sm dark:shadow-none hover:shadow-lg dark:hover:border-slate-700 hover:-translate-y-1 transition-all duration-500 relative flex flex-col min-h-[280px]">
+                      <div className="absolute top-6 right-6">
+                         <Badge className={cn("px-3 py-1 rounded-full font-black text-[8px] uppercase border-none", ROLE_MAP[user.role]?.badgeVariant)}>
+                          {ROLE_MAP[user.role]?.label}
+                        </Badge>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className={cn("text-[8px] font-black uppercase tracking-widest", user.is_active ? "text-green-600" : "text-red-400")}>
-                          {user.is_active ? 'Active' : 'Restricted'}
+                      <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-6 shadow-inner text-slate-900 dark:text-white group-hover:bg-primary group-hover:text-white transition-all duration-500">
+                        <UserCircle2 size={24} />
+                      </div>
+                      <div className="flex-grow">
+                        <h3 className="text-lg font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100 leading-tight group-hover:text-primary transition-colors">
+                          {(user.first_name || '')} {(user.last_name || '')}
+                        </h3>
+                        <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">@{user.username}</p>
+                      </div>
+                      <div className="mt-6 pt-5 border-t border-slate-50 dark:border-slate-800/50 space-y-4">
+                        <div className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
+                          <Building2 size={12} className="text-primary" />
+                          <span className="text-[8px] font-black uppercase tracking-widest italic">{user.entity_name || 'CENTRAL'}</span>
                         </div>
-                        <Edit2 size={12} className="text-slate-100 dark:text-slate-800 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors" />
+                        <div className="flex items-center justify-between pt-2">
+                           <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost" size="icon"
+                                onClick={() => router.push(`/users/${user.id}`)}
+                                className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                              >
+                                <Eye size={14} />
+                              </Button>
+                              <Button
+                                variant="ghost" size="icon"
+                                onClick={() => router.push(`/users/${user.id}?edit=true`)}
+                                className="h-8 w-8 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
+                              >
+                                <Pencil size={14} />
+                              </Button>
+                           </div>
+                           <ChevronRight size={14} className="text-slate-200 dark:text-slate-800 group-hover:text-primary transition-colors" />
+                        </div>
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
                 ))}
               </div>
             )}

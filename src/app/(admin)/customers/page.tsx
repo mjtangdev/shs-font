@@ -361,7 +361,8 @@ export default function CustomerPage() {
                     {customers.map((c) => (
                       <TableRow
                         key={c.id}
-                        className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]"
+                        onClick={() => router.push(`/customers/${c.id}`)}
+                        className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03] cursor-pointer"
                       >
                         <TableCell className="py-5 px-10 align-middle">
                           <div className="flex flex-col gap-0.5">

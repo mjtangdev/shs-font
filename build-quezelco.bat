@@ -1,6 +1,6 @@
 @echo off
 REM Increase Node memory limit for the build process
-set NODE_OPTIONS=--max-old-space-size=4096
+set NODE_OPTIONS=--max-old-space-size=8192
 
 REM Build for Linux amd64 (Intel/AMD)
 docker buildx build ^

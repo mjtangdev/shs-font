@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Loader2, ArrowUp,
   Package, CheckCircle2, 
-  AlertTriangle, TabletSmartphone, Lock, Unlock, Building2, Zap, Edit2, History, ShieldAlert, KeyRound, AlertCircle, ShieldCheck, Trash2
+  AlertTriangle, TabletSmartphone, Lock, Unlock, Building2, Zap, Edit2, History, ShieldAlert, KeyRound, AlertCircle, ShieldCheck, Trash2,
+  MoreHorizontal
 } from 'lucide-react';
 import {
   Pagination,
@@ -15,6 +16,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
@@ -220,29 +228,34 @@ export default function POSPage() {
             <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
                 <Table className="table-fixed">
                   <TableHeader className="bg-transparent border-b border-slate-100 dark:border-white/5 transition-colors">
-                    <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="w-[30%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Terminal Identity</TableHead>
-                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Custodian</TableHead>
-                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Security Status</TableHead>
-                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Registered</TableHead>
-                      <TableHead className="w-[15%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ops</TableHead>
+                    <TableRow className="border-none hover:bg-transparent text-slate-400 dark:text-slate-500">
+                      <TableHead className="w-[5%] px-6 py-4 font-black text-[9px] uppercase tracking-[0.2em] leading-none align-middle text-center">#</TableHead>
+                      <TableHead className="w-[30%] px-6 py-4 font-black text-[9px] uppercase tracking-[0.2em] leading-none align-middle">Terminal Identity</TableHead>
+                      <TableHead className="w-[22%] px-6 py-4 font-black text-[9px] uppercase tracking-[0.2em] leading-none align-middle text-center">Custodian</TableHead>
+                      <TableHead className="w-[18%] px-6 py-4 font-black text-[9px] uppercase tracking-[0.2em] leading-none align-middle text-center">Security Status</TableHead>
+                      <TableHead className="w-[15%] px-6 py-4 font-black text-[9px] uppercase tracking-[0.2em] leading-none align-middle text-center">Registered</TableHead>
+                      <TableHead className="w-[10%] text-right pr-10 py-4 font-black text-[9px] uppercase tracking-[0.2em] leading-none align-middle">Ops</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
-                    {filteredTerminals.map((pos) => (
+                    {filteredTerminals.map((pos, idx) => (
                       <TableRow key={pos.pos_sn} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
-                        <TableCell className="py-5 px-8 align-middle">
-                          <div className="flex items-center gap-4 min-w-0">
+                        <TableCell className="py-5 px-6 text-center align-middle font-black italic text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                          {(currentPage - 1) * pageSize + idx + 1}
+                        </TableCell>
+                        <TableCell className="py-5 px-6 align-middle">
+                          <div className="flex items-center gap-3 min-w-0">
                             <div className={cn("w-10 h-10 rounded-xl border flex items-center justify-center transition-all shrink-0", pos.status === 1 ? "border-primary/20 bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-400")}>
                                 <TabletSmartphone size={18} />
                             </div>
                             <div className="flex flex-col gap-0.5 min-w-0">
-                                <span className="font-black uppercase italic tracking-tighter text-slate-900 dark:text-white text-[15px] leading-tight group-hover:text-primary transition-colors truncate">SN: {pos.pos_sn}</span>
-                                <Badge className={cn("w-fit px-2 py-0.5 rounded-full font-black text-[7px] uppercase border-none", STATUS_MAP[pos.status]?.badgeVariant)}>{STATUS_MAP[pos.status]?.label}</Badge>
+                                <span className="font-black uppercase italic tracking-tighter text-slate-900 dark:text-white text-[16px] leading-tight group-hover:text-primary transition-colors tabular-nums">
+                                    SN: {pos.pos_sn}
+                                </span>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="px-8 align-middle text-center">
+                        <TableCell className="px-6 align-middle text-center">
                           <div className="flex flex-col gap-1 items-center min-w-0">
                             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase italic text-slate-900 dark:text-slate-300 w-full justify-center">
                                <Building2 size={12} className="text-primary shrink-0" />
@@ -250,7 +263,7 @@ export default function POSPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="px-8 align-middle text-center">
+                        <TableCell className="px-6 align-middle text-center">
                            <div className="flex flex-col items-center gap-1">
                                 <Badge variant="outline" className={cn("px-3 py-1 rounded-full font-black text-[8px] uppercase border-2 mx-auto", pos.lock_status === 0 ? "bg-green-50 text-green-600 border-green-100 dark:bg-green-500/10 dark:text-green-400" : "bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-400")}>
                                     {pos.lock_status === 0 ? "Normal" : pos.lock_status === 1 ? "Admin Locked" : "Finance Lock"}
@@ -262,34 +275,54 @@ export default function POSPage() {
                                 )}
                            </div>
                         </TableCell>
-                        <TableCell className="px-8 align-middle text-right font-mono text-[10px] font-black text-slate-400 italic whitespace-nowrap">{pos.created_at?.split(' ')[0]}</TableCell>
-                        <TableCell className="py-5 px-8 pr-8 text-right align-middle whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
-                              <Link href={`/devices/pos/edit/${pos.pos_sn}`} passHref><Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-slate-900 dark:hover:text-white rounded-lg transition-all h-9 w-9"><Edit2 size={16} /></Button></Link>
+                        <TableCell className="px-6 align-middle text-center font-mono text-[11px] font-black text-slate-500 dark:text-slate-400 italic whitespace-nowrap tabular-nums tracking-tighter">
+                          {pos.created_at?.split('T')[0]}
+                        </TableCell>
+                        <TableCell className="py-5 px-6 pr-10 text-right align-middle">
+                          <div className="flex items-center justify-end">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-400 hover:text-primary transition-all">
+                                    <MoreHorizontal size={18} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 p-1 rounded-xl bg-white dark:bg-slate-900 shadow-xl border-slate-100 dark:border-white/5">
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/devices/pos/edit/${pos.pos_sn}`} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-widest cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-colors">
+                                      <Edit2 size={14} className="text-slate-400" />
+                                      Edit Device
+                                    </Link>
+                                  </DropdownMenuItem>
 
-                              {pos.lock_status === 0 ? (
-                                <Button variant="ghost" size="icon" onClick={() => openSecurityModal(pos, 'lock')} className="text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg h-9 w-9"><Lock size={16} /></Button>
-                              ) : (
-                                <Button variant="ghost" size="icon" onClick={() => openSecurityModal(pos, 'unlock')} className="text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg h-9 w-9"><Unlock size={16} /></Button>
-                              )}
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/devices/pos/logs/${pos.pos_sn}`} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-widest cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-colors">
+                                      <History size={14} className="text-slate-400" />
+                                      View History
+                                    </Link>
+                                  </DropdownMenuItem>
 
-                              {(userRole === "1" || userRole === "3") && pos.status !== 1 && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleDeleteAsset(pos.pos_sn)}
-                                  className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"
-                                  title="Delete Asset"
-                                >
-                                  <Trash2 size={16} />
-                                </Button>
-                              )}
+                                  <DropdownMenuSeparator className="bg-slate-50 dark:bg-white/5" />
 
-                              <Link href={`/devices/pos/logs/${pos.pos_sn}`} passHref>
-                                <Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9">
-                                    <History size={16} />
-                                </Button>
-                              </Link>
+                                  {pos.lock_status === 0 ? (
+                                    <DropdownMenuItem onClick={() => openSecurityModal(pos, 'lock')} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-widest cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors">
+                                      <Lock size={14} />
+                                      Lock Device
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem onClick={() => openSecurityModal(pos, 'unlock')} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-widest cursor-pointer text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 rounded-lg transition-colors">
+                                      <Unlock size={14} />
+                                      Unlock Device
+                                    </DropdownMenuItem>
+                                  )}
+
+                                  {(userRole === "1" || userRole === "3") && pos.status !== 1 && (
+                                    <DropdownMenuItem onClick={() => handleDeleteAsset(pos.pos_sn)} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-widest cursor-pointer text-red-600 hover:bg-red-50 dark:hover:bg-red-600/10 rounded-lg transition-colors">
+                                      <Trash2 size={14} />
+                                      Delete Asset
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
