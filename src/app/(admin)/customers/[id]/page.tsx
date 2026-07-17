@@ -588,7 +588,7 @@ export default function CustomerProfilePage() {
                                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
                                     <Clock size={20} />
                                  </div>
-                                 <div className="flex flex-col">
+                                 <div className="flex flex-col items-start">
                                     <h3 className="text-[10px] font-black uppercase text-slate-400 leading-none mb-1">Service Expiry</h3>
                                     <span className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                                        {formData.expiry_time ? new Date(formData.expiry_time.replace(' ', 'T')).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "No Expiry Recorded"}
@@ -708,7 +708,7 @@ export default function CustomerProfilePage() {
                           <Table>
                             <TableHeader className="bg-slate-100/50 dark:bg-slate-800/50">
                               <TableRow className="hover:bg-transparent border-none">
-                                <TableHead className="px-8 font-black text-[8px] uppercase tracking-widest text-slate-400">Date/Time</TableHead>
+                                <TableHead className="px-8 font-black text-[8px] uppercase tracking-widest text-slate-400 text-right">Date/Time</TableHead>
                                 <TableHead className="font-black text-[8px] uppercase tracking-widest text-slate-400">Action</TableHead>
                                 <TableHead className="font-black text-[8px] uppercase tracking-widest text-slate-400">Amount</TableHead>
                                 <TableHead className="font-black text-[8px] uppercase tracking-widest text-slate-400 text-right pr-8">Days</TableHead>
@@ -718,7 +718,12 @@ export default function CustomerProfilePage() {
                               {formData.recent_transactions.length > 0 ? (
                                 formData.recent_transactions.map((tx: any) => (
                                   <TableRow key={tx.transaction_id} className="border-none hover:bg-white/40 dark:hover:bg-slate-800/40 transition-colors">
-                                    <TableCell className="px-8 font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400">{tx.transaction_time}</TableCell>
+                                    <TableCell className="px-8 font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400 text-right">
+                                      <div className="flex flex-col items-end gap-0.5">
+                                        <span>{tx.transaction_time?.replace('T', ' ').split(' ')[0]}</span>
+                                        <span className="text-[9px] opacity-60">{tx.transaction_time?.replace('T', ' ').split(' ')[1]?.substring(0, 5)}</span>
+                                      </div>
+                                    </TableCell>
                                     <TableCell>
                                       <Badge className={cn(
                                         "border-none px-2 py-0.5 rounded-full font-black text-[8px] uppercase shadow-sm",

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Export to Word</title>
+    <style>
+        body { font-family: "Microsoft YaHei", sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 40px auto; padding: 20px; }
+        h1 { font-size: 28pt; border-bottom: 2px solid #000; padding-bottom: 10px; margin-top: 40px; }
+        h2 { font-size: 20pt; color: #1a56db; margin-top: 30px; border-left: 5px solid #1a56db; padding-left: 10px; }
+        h3 { font-size: 16pt; margin-top: 20px; color: #444; }
+        p { font-size: 12pt; margin-bottom: 15px; text-align: justify; }
+        .step-box { margin-bottom: 50px; border-bottom: 1px solid #eee; padding-bottom: 30px; }
+        img { max-width: 100%; height: auto; display: block; margin: 20px 0; border: 1px solid #ddd; }
+        .pos-img { max-width: 320px; margin: 20px 0; border: 2px solid #333; }
+        .info-box { background: #f9fafb; border: 1px solid #e5e7eb; padding: 15px; margin: 15px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <h1>Part A: Management Web Portal (管理后台)</h1>
+
+    <div class="step-box">
+        <h2>01. Initial Authentication (登录与认证)</h2>
+        <p>Navigate to the system URL. Use the following credentials for first-time access:</p>
+        <div class="info-box">
+            <strong>Username:</strong> admin<br>
+            <strong>Password:</strong> admin123
+        </div>
+        <p><strong>Note:</strong> You will be prompted to change your password immediately after login.</p>
+        <img src="./img/img1.png">
+        <img src="./img/img3.png">
+    </div>
+
+    <div class="step-box">
+        <h2>02. Organization Profile (组织信息配置)</h2>
+        <p>Configure the basic company profile including Logo, TIN, and contact details. This logo will appear on POS receipts.</p>
+        <img src="./img/img2.png">
+    </div>
+
+    <div class="step-box">
+        <h2>03. Regional & Rates Setup (地区与费率设置)</h2>
+        <p>Create your regional hierarchy (Barangay/Purok) and set the electricity rates for each level.</p>
+        <img src="./img/img6.png">
+        <img src="./img/img7.png">
+        <img src="./img/img9.png">
+    </div>
+
+    <div class="step-box">
+        <h2>04. Team Management (团队管理)</h2>
+        <p>Add new members, assign roles (Operator/Finance), and bind them to specific regions.</p>
+        <img src="./img/img12.png">
+        <p>Administrative Controls: Reset passwords or modify member data.</p>
+        <img src="./img/img25.png">
+        <img src="./img/img26.png">
+    </div>
+
+    <div style="page-break-after: always;"></div>
+
+    <h1>Part B: Terminal POS Operations (终端操作)</h1>
+
+    <div class="step-box">
+        <h2>01. POS Home & Dashboard</h2>
+        <p>Overview of the POS main interface and daily metrics.</p>
+        <img src="./img/pos/poshome.png" class="pos-img">
+    </div>
+
+    <div class="step-box">
+        <h2>02. Daily Collection & Payment Processing</h2>
+        <p>Scan consumer codes and process payments. Follow these steps for successful transaction:</p>
+        <img src="./img/img15.png" class="pos-img">
+        <img src="./img/pos/pos1.png" class="pos-img">
+        <img src="./img/pos/pos2.png" class="pos-img">
+        <img src="./img/pos/pos3.png" class="pos-img">
+        <img src="./img/pos/pos4.png" class="pos-img">
+        <img src="./img/pos/pos5.png" class="pos-img">
+    </div>
+
+    <div class="step-box">
+        <h2>03. Device Binding & Tools</h2>
+        <p>Pair hardware meters and use administrative tools.</p>
+        <img src="./img/img18.png" class="pos-img">
+        <img src="./img/pos/postool.png" class="pos-img">
+        <img src="./img/pos/pos6.png" class="pos-img">
+        <img src="./img/pos/pos7.png" class="pos-img">
+        <img src="./img/pos/pos8.png" class="pos-img">
+        <img src="./img/pos/pos9.png" class="pos-img">
+        <img src="./img/pos/pos10.png" class="pos-img">
+    </div>
+
+    <div class="step-box">
+        <h2>04. Reports & History</h2>
+        <p>Review transaction logs and generate collection reports.</p>
+        <img src="./img/pos/pos11.png" class="pos-img">
+        <img src="./img/pos/pos12.png" class="pos-img">
+        <img src="./img/pos/pos13.png" class="pos-img">
+        <img src="./img/pos/pos14.png" class="pos-img">
+        <img src="./img/pos/pos15.png" class="pos-img">
+        <img src="./img/pos/pos16.png" class="pos-img">
+    </div>
+
+</body>
+</html>

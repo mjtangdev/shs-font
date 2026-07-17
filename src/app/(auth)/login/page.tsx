@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/axios';
 import { ASSETS } from '@/lib/assets/images'; 
@@ -12,6 +12,8 @@ import { Loader2, Lock, User, ArrowRight } from 'lucide-react';
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { translations, TranslationKey } from "@/lib/i18n";
 
 import Cookies from 'js-cookie';
 
@@ -25,6 +27,9 @@ export default function SolarWhiteLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Default to English for now | 暂时默认使用英文
+  const [lang] = useState<string>("en");
+  // const [lang, setLang] = useState<string>("en");
 
   // --- 修改密码相关状态 ---
   const [newPassword, setNewPassword] = useState("");
@@ -33,6 +38,26 @@ export default function SolarWhiteLoginPage() {
 
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const router = useRouter();
+
+  // 语言同步
+  useEffect(() => {
+    // Temporarily disabled language sync | 暂时禁用语言同步
+    /*
+    const savedLang = localStorage.getItem('app_lang') || 'en';
+    setLang(savedLang);
+
+    const handleLangChange = () => {
+      setLang(localStorage.getItem('app_lang') || 'en');
+    };
+
+    window.addEventListener('languageChange', handleLangChange);
+    return () => window.removeEventListener('languageChange', handleLangChange);
+    */
+  }, []);
+
+  const t = (key: TranslationKey) => {
+    return (translations as any)[lang][key] || key;
+  };
 
   // 辅助函数：更健壮地将后端值转换为布尔值
   const toBoolean = (value: any): boolean => {
@@ -51,15 +76,15 @@ export default function SolarWhiteLoginPage() {
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) return toast.error("Passwords do not match");
-    if (newPassword.length < 6) return toast.error("Password must be at least 6 characters");
+    if (newPassword !== confirmPassword) return toast.error(t('passwordsDoNotMatch'));
+    if (newPassword.length < 6) return toast.error(t('passwordTooShort'));
 
     setUpdatingPassword(true);
     try {
       // 使用 PATCH 方法调用修改密码 API
       await apiClient.patch('/user/me/change-password', { new_password: newPassword });
       
-      toast.success("Password updated successfully!");
+      toast.success(t('passwordUpdatedSuccess'));
       setShowPasswordDialog(false);
       
       // 1. 同步更新本地状态，标记 password_updated 为 true
@@ -146,7 +171,7 @@ export default function SolarWhiteLoginPage() {
         return; // 拦截跳转逻辑
       }
 
-      toast.success(`Welcome back, ${data.username}!`);
+      toast.success(`${t('welcomeBack')}, ${data.username}!`);
 
       // --- 跳转逻辑 (仅在密码已更新的情况下执行) ---
       setTimeout(() => {
@@ -164,7 +189,7 @@ export default function SolarWhiteLoginPage() {
       // 提取 FastAPI 的错误信息
       const errorDetail = errorData?.detail;
       const errorMsg = Array.isArray(errorDetail) ? errorDetail[0]?.msg : errorDetail;
-      toast.error(errorMsg || "Invalid username or password");
+      toast.error(errorMsg || t('invalidCredentials'));
     } finally {
       setLoading(false);
     }
@@ -184,8 +209,10 @@ export default function SolarWhiteLoginPage() {
 
       <Toaster position="top-center" richColors />
 
-      <div className="fixed top-6 right-6 z-50">
+      <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
         <ThemeToggle />
+        {/* Temporarily disabled language toggle | 暂时禁用语言切换 */}
+        {/* <LanguageToggle /> */}
       </div>
 
       <div className="flex flex-col lg:flex-row w-full h-screen">
@@ -234,8 +261,8 @@ export default function SolarWhiteLoginPage() {
             shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] dark:shadow-none">
             
             <div className="mb-12">
-              <h2 className="text-3xl font-black text-slate-950 dark:text-slate-100 tracking-tight italic">Sign In</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg font-medium italic">Authorized access only</p>
+              <h2 className="text-3xl font-black text-slate-950 dark:text-slate-100 tracking-tight italic">{t('signIn')}</h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg font-medium italic">{t('authorizedAccess')}</p>
             </div>
 
             <form onSubmit={handleLogin} className="space-y-6">
@@ -243,7 +270,7 @@ export default function SolarWhiteLoginPage() {
                 <User size={18} className={loginInputIconClass} />
                 <Input
                   required
-                  placeholder="Username"
+                  placeholder={t('username')}
                   className={loginInputClass}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -254,7 +281,7 @@ export default function SolarWhiteLoginPage() {
                 <Input
                   required
                   type="password"
-                  placeholder="Password"
+                  placeholder={t('password')}
                   className={loginInputClass}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -275,7 +302,7 @@ export default function SolarWhiteLoginPage() {
                     <Loader2 className="animate-spin" size={24} />
                     ) : (
                     <>
-                        <span className="tracking-[0.1em]">LOG IN</span>
+                        <span className="tracking-[0.1em]">{t('logIn')}</span>
                         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                     </>
                     )}
@@ -296,16 +323,16 @@ export default function SolarWhiteLoginPage() {
       {/* 💡 默认密码修改提示弹出框 - 采用与页面一致的拟物化白玻风格 */}
       <Dialog open={showPasswordDialog} onOpenChange={() => {}}>
         <DialogContent className="max-w-[420px] p-0 overflow-hidden border-none rounded-3xl bg-white dark:bg-slate-900/60 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.15)]">
-          <DialogHeader className="sr-only"><DialogTitle>Security Action Required</DialogTitle><DialogDescription>Your account is using a default password and needs to be updated.</DialogDescription></DialogHeader>
+          <DialogHeader className="sr-only"><DialogTitle>{t('securityActionRequired')}</DialogTitle><DialogDescription>{t('defaultPasswordNotice')}</DialogDescription></DialogHeader>
           <div className="p-10">
               
               <div className="mb-8 text-center flex flex-col items-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-4 border border-primary/20">
                   <Lock size={24} />
                 </div>
-                <h3 className="text-xl font-black text-slate-950 dark:text-slate-100 tracking-tight italic">Update Default Password</h3>
+                <h3 className="text-xl font-black text-slate-950 dark:text-slate-100 tracking-tight italic">{t('updateDefaultPassword')}</h3>
                 <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm font-medium leading-relaxed px-4">
-                  For security reasons, you must change your password before proceeding to the dashboard.
+                  {t('securityReasonNotice')}
                 </p>
               </div>
 
@@ -315,7 +342,7 @@ export default function SolarWhiteLoginPage() {
                   <Input
                     required
                     type="password"
-                    placeholder="New Password"
+                    placeholder={t('newPassword')}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className={`h-12 ${loginInputClass}`}
@@ -326,7 +353,7 @@ export default function SolarWhiteLoginPage() {
                   <Input
                     required
                     type="password"
-                    placeholder="Confirm New Password"
+                    placeholder={t('confirmNewPassword')}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className={`h-12 ${loginInputClass}`}
@@ -346,7 +373,7 @@ export default function SolarWhiteLoginPage() {
                   >
                     {updatingPassword ? <Loader2 className="animate-spin" size={24} /> : (
                       <>
-                        <span className="tracking-[0.1em]">CONFIRM UPDATE</span>
+                        <span className="tracking-[0.1em]">{t('confirmUpdate')}</span>
                         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                       </>
                     )}

@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { 
   LogOut, LayoutDashboard, Settings, Zap, Users, 
   ChevronDown, UserSquare, UserCog, Wallet, 
-  Map, Building2, CreditCard, Tablet, Monitor, ShieldAlert, FileSpreadsheet
+  Map, Building2, CreditCard, Tablet, Monitor, ShieldAlert, FileSpreadsheet,
+  Languages, RefreshCw
 } from "lucide-react";
 import Link from "next/link"; 
 import { usePathname } from "next/navigation";
@@ -16,6 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { translations, TranslationKey } from "@/lib/i18n";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -28,6 +31,11 @@ export function Navbar() {
   const [role, setRole] = useState<number>(0);
   const [username, setUsername] = useState<string>("");
   const [mounted, setMounted] = useState(false);
+  const [lang, setLang] = useState<string>("en");
+
+  const t = (key: TranslationKey) => {
+    return (translations as any)[lang][key] || key;
+  };
 
   const syncAuth = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -43,10 +51,19 @@ export function Navbar() {
 
   useEffect(() => {
     syncAuth();
+    const savedLang = localStorage.getItem('app_lang') || 'en';
+    setLang(savedLang);
+
+    const handleLangChange = () => {
+      setLang(localStorage.getItem('app_lang') || 'en');
+    };
+
+    window.addEventListener('languageChange', handleLangChange);
     window.addEventListener('popstate', syncAuth);
     window.addEventListener('pageshow', syncAuth);
     window.addEventListener('storage', syncAuth);
     return () => {
+      window.removeEventListener('languageChange', handleLangChange);
       window.removeEventListener('popstate', syncAuth);
       window.removeEventListener('pageshow', syncAuth);
       window.removeEventListener('storage', syncAuth);
@@ -63,11 +80,11 @@ export function Navbar() {
 
   const getRoleBadge = (roleId: number) => {
     switch (roleId) {
-      case 0: return "Super Admin";
-      case 1: return "Administrator";
-      case 2: return "Operator";
-      case 3: return "Finance";
-      default: return "Staff";
+      case 0: return t('super_admin');
+      case 1: return t('administrator');
+      case 2: return t('operator');
+      case 3: return t('finance_role');
+      default: return t('staff');
     }
   };
 
@@ -100,7 +117,7 @@ export function Navbar() {
           
           <Link href="/dashboard" className={`${navItemStyles} ${pathname === '/dashboard' ? activeStyles : inactiveStyles}`}>
             <LayoutDashboard size={19} />
-            <span>Dashboard</span>
+            <span>{t('dashboard')}</span>
           </Link>
 
           {mounted && (
@@ -112,86 +129,86 @@ export function Navbar() {
                     <DropdownMenuTrigger asChild>
                       <button className={`outline-none ${navItemStyles} ${pathname.includes('/settings') ? activeStyles : inactiveStyles}`}>
                         <Settings size={19} />
-                        <span>Settings</span>
+                        <span>{t('settings')}</span>
                         <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openBasic ? 'rotate-180' : ''}`} />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
-                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/regions" className={dropdownItemStyles}><Map size={16}/> Regions</Link></DropdownMenuItem>
-                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/branches" className={dropdownItemStyles}><Building2 size={16}/> Branches</Link></DropdownMenuItem>
-                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/templates" className={dropdownItemStyles}><FileSpreadsheet size={16}/> Templates</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/regions" className={dropdownItemStyles}><Map size={16}/> {t('regions')}</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/branches" className={dropdownItemStyles}><Building2 size={16}/> {t('branches')}</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/templates" className={dropdownItemStyles}><FileSpreadsheet size={16}/> {t('templates')}</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/settings/migration" className={dropdownItemStyles}><RefreshCw size={16}/> {t('migration')}</Link></DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               )}
 
-              {/* 2. Users 逻辑：ADMIN 是下拉；OPERATOR 和 FINANCE 是单图标 */}
+              {/* 2. Users 逻辑 */}
               {IS_ADMIN ? (
                 <div onMouseEnter={() => setOpenUser(true)} onMouseLeave={() => setOpenUser(false)}>
                   <DropdownMenu open={openUser} onOpenChange={setOpenUser}>
                     <DropdownMenuTrigger asChild>
                       <button className={`outline-none ${navItemStyles} ${pathname.includes('/users') || pathname.includes('/customers') ? activeStyles : inactiveStyles}`}>
                         <Users size={19} />
-                        <span>Users</span>
+                        <span>{t('users')}</span>
                         <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openUser ? 'rotate-180' : ''}`} />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
-                      <DropdownMenuItem asChild className="p-0"><Link href="/customers" className={dropdownItemStyles}><UserSquare size={16}/> Customers</Link></DropdownMenuItem>
-                      <DropdownMenuItem asChild className="p-0"><Link href="/users" className={dropdownItemStyles}><UserCog size={16}/> Team</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/customers" className={dropdownItemStyles}><UserSquare size={16}/> {t('customers')}</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/users" className={dropdownItemStyles}><UserCog size={16}/> {t('team')}</Link></DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               ) : (IS_OPERATOR || IS_FINANCE) ? (
                 <Link href="/customers" className={`${navItemStyles} ${pathname.includes('/customers') ? activeStyles : inactiveStyles}`}>
                   <UserSquare size={19} />
-                  <span>Customers</span>
+                  <span>{t('customers')}</span>
                 </Link>
               ) : null}
 
-              {/* 3. Devices - 全员可见 (1, 2, 3) */}
+              {/* 3. Devices */}
               <div onMouseEnter={() => setOpenDevice(true)} onMouseLeave={() => setOpenDevice(false)}>
                 <DropdownMenu open={openDevice} onOpenChange={setOpenDevice}>
                   <DropdownMenuTrigger asChild>
                     <button className={`outline-none ${navItemStyles} ${pathname.includes('/devices') ? activeStyles : inactiveStyles}`}>
                       <Monitor size={19} />
-                      <span>Devices</span>
+                      <span>{t('devices')}</span>
                       <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openDevice ? 'rotate-180' : ''}`} />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
-                    <DropdownMenuItem asChild className="p-0"><Link href="/devices/card" className={dropdownItemStyles}><CreditCard size={16}/> IC Cards</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="p-0"><Link href="/devices/card" className={dropdownItemStyles}><CreditCard size={16}/> {t('ic_cards')}</Link></DropdownMenuItem>
                     {!IS_OPERATOR && (
-                      <DropdownMenuItem asChild className="p-0"><Link href="/devices/pos" className={dropdownItemStyles}><CreditCard size={16}/> POS</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/devices/pos" className={dropdownItemStyles}><CreditCard size={16}/> {t('pos')}</Link></DropdownMenuItem>
                     )}
-                    <DropdownMenuItem asChild className="p-0"><Link href="/devices/solar" className={dropdownItemStyles}><Tablet size={16}/> Solar Units</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="p-0"><Link href="/devices/solar" className={dropdownItemStyles}><Tablet size={16}/> {t('solar_units')}</Link></DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
 
-              {/* 4. Finance - 对账权限控制：ADMIN(0,1) 或 FINANCE(3) */}
+              {/* 4. Finance */}
               {(IS_ADMIN || IS_FINANCE) ? (
                 <div onMouseEnter={() => setOpenFinance(true)} onMouseLeave={() => setOpenFinance(false)}>
                   <DropdownMenu open={openFinance} onOpenChange={setOpenFinance}>
                     <DropdownMenuTrigger asChild>
                       <button className={`outline-none ${navItemStyles} ${pathname.includes('/finance') ? activeStyles : inactiveStyles}`}>
                         <Wallet size={19} />
-                        <span>Finance</span>
+                        <span>{t('finance')}</span>
                         <ChevronDown size={13} className={`ml-1 transition-transform duration-200 ${openFinance ? 'rotate-180' : ''}`} />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="center" className="w-48 p-1 bg-white dark:bg-slate-900 shadow-xl dark:shadow-none rounded-xl border-slate-100 dark:border-slate-800">
-                      <DropdownMenuItem asChild className="p-0"><Link href="/finance" className={dropdownItemStyles}><Wallet size={16}/> Transactions</Link></DropdownMenuItem>
-                      <DropdownMenuItem asChild className="p-0"><Link href="/finance/expired" className={dropdownItemStyles}><ShieldAlert size={16}/> Expired Accounts</Link></DropdownMenuItem>
-                      <DropdownMenuItem asChild className="p-0"><Link href="/finance/reconcile" className={dropdownItemStyles}><Monitor size={16}/> Reconciliation</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/finance" className={dropdownItemStyles}><Wallet size={16}/> {t('transactions')}</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/finance/expired" className={dropdownItemStyles}><ShieldAlert size={16}/> {t('expired_accounts')}</Link></DropdownMenuItem>
+                      <DropdownMenuItem asChild className="p-0"><Link href="/finance/reconcile" className={dropdownItemStyles}><Monitor size={16}/> {t('reconciliation')}</Link></DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               ) : IS_OPERATOR ? (
-                /* Operator 只能看到交易流水链接，不能看到对账 */
                 <Link href="/finance" className={`${navItemStyles} ${pathname === '/finance' ? activeStyles : inactiveStyles}`}>
                   <Wallet size={19} />
-                  <span>Finance</span>
+                  <span>{t('finance')}</span>
                 </Link>
               ) : null}
             </>
@@ -199,10 +216,12 @@ export function Navbar() {
         </div>
 
         {/* 用户信息与登出 */}
-        <div className="flex items-center gap-4 min-w-[150px] justify-end">
+        <div className="flex items-center gap-4 min-w-[200px] justify-end">
           
           <ThemeToggle />
-          
+          {/* Temporarily disabled language toggle | 暂时禁用语言切换 */}
+          {/* <LanguageToggle /> */}
+
           <div className="flex flex-col items-end border-r border-slate-100 dark:border-slate-800/50 pr-5">
             <span className="text-[15px] font-bold text-slate-900 dark:text-slate-100 leading-none">
               {mounted ? username : "---"}

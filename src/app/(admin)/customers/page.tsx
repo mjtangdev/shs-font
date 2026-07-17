@@ -389,13 +389,13 @@ export default function CustomerPage() {
                             {c.region_name}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right align-middle pr-10">
+                        <TableCell className="align-middle px-8 text-right">
                           <div className="flex flex-col items-end gap-0.5">
                             <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">
-                              {c.created_at?.split(" ")[0]}
+                              {c.created_at?.replace('T', ' ').split(" ")[0]}
                             </span>
                             <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">
-                              {c.created_at?.split(" ")[1]}
+                              {c.created_at?.replace('T', ' ').split(" ")[1]?.substring(0, 5)}
                             </span>
                           </div>
                         </TableCell>

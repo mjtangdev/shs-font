@@ -4,1049 +4,254 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SHS System Operation Manual</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        primary: '#facc15', // Electric Yellow
-                    }
+                    colors: { primary: '#facc15' }
                 }
             }
         }
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f1f5f9; }
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s; }
+        .dark { background-color: #0f172a; color: #f1f5f9; }
+        .light { background-color: #f8fafc; color: #1e293b; }
 
-        /* Mode switch styles */
-        .nav-tab { cursor: pointer; transition: all 0.3s ease; position: relative; }
-        .nav-tab.active { color: #facc15; }
-        .nav-tab.active::after {
-            content: ''; position: absolute; bottom: -18px; left: 0; width: 100%; height: 3px;
-            background: #facc15; box-shadow: 0 0 15px #facc15; border-radius: 10px;
-        }
-        .manual-section { display: none; animation: fadeIn 0.5s ease forwards; }
+        .nav-tab { cursor: pointer; transition: all 0.3s ease; border-bottom: 2px solid transparent; }
+        .nav-tab.active { border-color: #facc15; color: #facc15; }
+
+        .manual-section { display: none; }
         .manual-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .step-number { font-weight: 900; font-style: italic; font-size: 3rem; opacity: 0.1; line-height: 1; }
+        /* Language Toggle Styles */
+        [lang="cn"] { display: none; }
+        html[lang="cn"] [lang="cn"] { display: inline; }
+        html[lang="cn"] [lang="en"] { display: none; }
+
         .image-container {
             background: #1e293b;
             border: 2px solid #334155;
-            border-radius: 1.5rem;
+            border-radius: 1rem;
             overflow: hidden;
-            margin: 1.5rem 0;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            margin: 1rem 0;
+            cursor: zoom-in;
         }
-        .image-placeholder {
-            height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #475569;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-size: 0.75rem;
-        }
+        .light .image-container { background: #e2e8f0; border-color: #cbd5e1; }
 
-        /* 💡 Zoom effect and lightbox styles */
-        .image-container img { cursor: zoom-in; transition: transform 0.3s ease; }
-        .image-container img:hover { transform: scale(1.02); }
-
-        #section-pos .image-container {
-            max-width: 300px;
-            margin-left: auto;
-            margin-right: auto;
-            border-width: 4px;
-            border-color: #334155;
+        @media print {
+            nav, #lightbox, .lang-switcher { display: none !important; }
+            .manual-section { display: block !important; }
+            #section-web { page-break-after: always; }
+            .print-card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 30pt; }
+            [lang="cn"], [lang="en"] { display: block !important; } /* 打印时显示双语或根据需要调整 */
         }
 
         #lightbox {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(10px);
-            align-items: center;
-            justify-content: center;
-            cursor: zoom-out;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            z-index: 10000; align-items: center; justify-content: center; cursor: zoom-out;
         }
-        #lightbox img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 1rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            transform: scale(0.9);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        #lightbox.active { display: flex; }
-        #lightbox.active img { transform: scale(1); }
+        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 1rem; border: 4px solid #334155; }
     </style>
 </head>
-<body class="antialiased">
+<body class="dark antialiased">
 
-    <!-- Lightbox Container -->
-    <div id="lightbox" onclick="this.classList.remove('active')">
-        <img src="" alt="Full Scale View">
+    <div id="lightbox" onclick="this.style.display='none'">
+        <img src="" id="lightbox-img">
     </div>
 
-    <!-- Top Navigation -->
-    <nav class="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-6 py-4">
-        <div class="max-w-6xl mx-auto flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <div class="flex items-center gap-2 pr-6 border-r border-slate-800">
-                    <i data-lucide="zap" class="text-primary fill-current w-6 h-6"></i>
-                    <span class="font-black uppercase tracking-tighter italic text-xl">SHS System</span>
-                </div>
-
-                <!-- Tab Navigation -->
-                <div class="flex items-center gap-8 text-[11px] font-black uppercase tracking-widest text-slate-500">
-                    <button onclick="switchMode('web')" id="tab-web" class="nav-tab active focus:outline-none">Management Web</button>
-                    <button onclick="switchMode('pos')" id="tab-pos" class="nav-tab focus:outline-none">Terminal POS</button>
+    <!-- 📱 Navigation -->
+    <nav class="sticky top-0 z-50 bg-slate-900/90 dark:bg-slate-900/90 light:bg-white/90 backdrop-blur-md border-b border-slate-800 dark:border-slate-800 light:border-slate-200 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex gap-8 items-center">
+                <span class="font-black italic text-xl tracking-tighter text-primary">SHS FRONTEND</span>
+                <div class="flex gap-6 text-xs font-black uppercase tracking-widest text-slate-500">
+                    <button onclick="switchMode('web')" id="tab-web" class="nav-tab active pb-1">
+                        <span lang="en">Web Portal</span><span lang="cn">管理后台</span>
+                    </button>
+                    <button onclick="switchMode('pos')" id="tab-pos" class="nav-tab pb-1">
+                        <span lang="en">POS Terminal</span><span lang="cn">POS 终端</span>
+                    </button>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">v1.0 Manual</span>
+
+            <div class="flex items-center gap-6">
+                <!-- Color Mode Toggle -->
+                <button onclick="toggleTheme()" class="text-slate-500 hover:text-primary transition-colors">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden"></i>
+                </button>
+
+                <!-- Language Toggle -->
+                <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter border-l border-slate-800 pl-6">
+                    <button onclick="setLang('en')" id="lang-en" class="hover:text-primary transition-colors text-primary">EN</button>
+                    <span class="text-slate-700">|</span>
+                    <button onclick="setLang('cn')" id="lang-cn" class="hover:text-primary transition-colors text-slate-500">CN</button>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto px-6 py-16">
+    <main class="max-w-5xl mx-auto py-16 px-6">
 
-        <!-- WEB Mode Content Container -->
+        <!-- SECTION A: WEB PORTAL -->
         <div id="section-web" class="manual-section active">
-            <!-- Header -->
-            <header class="mb-24">
-                <h1 class="text-6xl font-black uppercase italic tracking-tighter mb-6 leading-none">Management <span class="text-primary">Portal</span></h1>
-                <div class="h-1 w-20 bg-primary"></div>
-            </header>
-
-        <!-- Chapter 1: Login -->
-        <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-            <div class="flex flex-col items-center">
-                <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">01</div>
-                <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-            </div>
-            <div class="flex-1 space-y-10">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="shield-check" class="w-8 h-8"></i></div>
-                    <div class="flex flex-col">
-                        <h2 class="text-3xl font-black uppercase italic tracking-tight">Security & Authentication</h2>
-                        <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">安全准入与身份验证</span> -->
-                    </div>
-                </div>
-
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div class="space-y-4">
-                            <span class="text-primary font-black text-[10px] uppercase tracking-widest">Initial Credentials <!-- | 初始凭据 --></span>
-                            <div class="bg-slate-950 rounded-2xl p-6 border border-white/5 space-y-4 shadow-inner">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Username</span>
-                                    <span class="text-base font-mono font-black text-white">admin</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Password</span>
-                                    <span class="text-base font-mono font-black text-white">admin123</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-4">
-                            <span class="text-primary font-black text-[10px] uppercase tracking-widest">Security Protocol <!-- | 安全协议 --></span>
-                            <div class="p-6 bg-primary/5 rounded-2xl border border-primary/10">
-                                <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                    Mandatory password reset is enforced upon initial access.
-                                </p>
-                                <!-- <p class="text-[10px] text-slate-500 italic mt-2">
-                                    首次登录必须重置密码。新密码长度需 ≥ 6 位。
-                                </p> -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="image-container mt-6">
-                        <img src="./img/img1.png" class="w-full h-auto" />
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Chapter 2: System Initialization -->
-        <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-            <div class="flex flex-col items-center">
-                <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">02</div>
-                <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-            </div>
-            <div class="flex-1 space-y-12">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="settings" class="w-8 h-8"></i></div>
-                    <div class="flex flex-col">
-                        <h2 class="text-3xl font-black uppercase italic tracking-tight">System Initialization</h2>
-                        <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">系统初始化配置</span> -->
-                    </div>
-                </div>
-
-                <div class="bg-primary/5 border-l-4 border-primary p-6 rounded-r-2xl">
-                    <p class="text-slate-300 font-bold leading-relaxed">
-                        System configuration consists of two essential steps:
-                        <span class="text-primary italic">1) Organization Profile setup</span> and
-                        <span class="text-primary italic">2) Regional structure & Rates configuration</span>.
-                    </p>
-                    <!-- <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-2">
-                        系统设置包含两个关键步骤：1. 配置公司基础信息；2. 建立地区架构并设定费率。
-                    </p> -->
-                </div>
-
-                <!-- Part A: Organization -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part A: Organization Profile <!-- | 组织架构 --></h3>
-                        <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                            Configure essential company details including Logo, TIN, and contact information.
-                        </p>
-                        <!-- <p class="text-[10px] text-slate-500 italic">
-                            配置公司核心信息（名称、税号、地址等）。上传的 Logo 将同步至 POS 终端用于单据打印。
-                        </p> -->
-                    </div>
-                    <div class="image-container">
-                        <img src="./img/img2.png" class="w-full h-auto" />
-                    </div>
-                </div>
-
-                <!-- Part B: Regions & Rates -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part B: Regional & Rates <!-- | 地区与费率 --></h3>
-                        <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                            Define geographical hierarchy and establish pricing protocols.
-                        </p>
-                        <!-- <p class="text-[10px] text-slate-500 italic">
-                            构建地区架构（根地区 > Barangay > Purok）并配置对应的每日电费费率。
-                        </p> -->
-                    </div>
-
-                    <div class="space-y-12">
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">1. Modify Root <!-- | 修改根地区 --></span>
-                            <div class="image-container mt-0"><img src="./img/img5.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">2. Add Barangay & Purok <!-- | 添加社区与区组 --></span>
-                            <div class="image-container mt-0"><img src="./img/img6.png" class="w-full h-auto" /></div>
-                            <div class="image-container mt-0"><img src="./img/img7.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">3. Global Rate Sync <!-- | 全局费率同步 --></span>
-                            <div class="image-container mt-0"><img src="./img/img9.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">4. Local Rate Adjustment <!-- | 区域费率微调 --></span>
-                            <div class="image-container mt-0"><img src="./img/img10.png" class="w-full h-auto" /></div>
-                            <div class="image-container mt-0"><img src="./img/img11.png" class="w-full h-auto" /></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Chapter 3: Team Management -->
-        <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-            <div class="flex flex-col items-center">
-                <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">03</div>
-                <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-            </div>
-            <div class="flex-1 space-y-10">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="user-cog" class="w-8 h-8"></i></div>
-                    <div class="flex flex-col">
-                        <h2 class="text-3xl font-black uppercase italic tracking-tight">Team Management</h2>
-                        <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">团队成员管理</span> -->
-                    </div>
-                </div>
-
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-6">
-                        <div class="bg-primary/5 border-l-4 border-primary p-6 rounded-r-2xl">
-                            <p class="text-slate-300 font-bold leading-relaxed">
-                                Add team members as <span class="text-primary italic">Operators</span> or <span class="text-primary italic">Finance</span> roles.
-                                <span class="text-white">Note:</span> Operators must be assigned to the <span class="underline decoration-primary">lowest regional level</span> (leaf node) for accurate transaction binding.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-2">
-                                按需添加操作员或财务角色。注意：为了确保交易绑定准确，操作员必须被分配至最底层的区域。
-                            </p> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-12">
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">1. Create New Member <!-- | 创建新成员 --></span>
-                            <div class="image-container mt-0"><img src="./img/img12.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">2. Role & Region Assignment <!-- | 角色与地区分配 --></span>
-                            <div class="image-container mt-0"><img src="./img/img13.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">3. Secure Provisioning <!-- | 凭据与部署确认 --></span>
-                            <div class="image-container mt-0"><img src="./img/img14.png" class="w-full h-auto" /></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Chapter 4: Customer Management -->
-        <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-            <div class="flex flex-col items-center">
-                <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">04</div>
-                <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-            </div>
-            <div class="flex-1 space-y-10">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="users" class="w-8 h-8"></i></div>
-                    <div class="flex flex-col">
-                        <h2 class="text-3xl font-black uppercase italic tracking-tight">Customer Management</h2>
-                        <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">客户档案管理</span> -->
-                    </div>
-                </div>
-
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-6">
-                        <div class="bg-primary/5 border-l-4 border-primary p-6 rounded-r-2xl">
-                            <p class="text-slate-300 font-bold leading-relaxed text-sm">
-                                When registering a new customer, ensure all identity and hardware details are correctly mapped.
-                                <span class="text-white">Crucial:</span> You MUST select the <span class="underline decoration-primary">lowest regional level</span> (leaf node) to accurately bind the customer to their specific community.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-2">
-                                注册新客户时，请确保身份和硬件信息准确映射。关键提示：必须选择最底层的区域，以确保客户与其所在社区准确绑定。
-                            </p> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-12">
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">1. Registration Form <!-- | 客户信息录入 --></span>
-                            <div class="image-container mt-0"><img src="./img/img15.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">2. Precise Regional Mapping <!-- | 精确地区映射 --></span>
-                            <div class="image-container mt-0"><img src="./img/img16.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <span class="text-slate-400 font-black text-[10px] uppercase tracking-widest">3. Hardware & Asset Binding <!-- | 硬件与资产绑定 --></span>
-                            <div class="image-container mt-0"><img src="./img/img17.png" class="w-full h-auto" /></div>
-                        </div>
-
-                        <div class="pt-10 border-t border-white/5 space-y-6">
-                            <div class="flex items-center gap-3 text-primary">
-                                <i data-lucide="file-down" class="w-6 h-6"></i>
-                                <span class="text-sm font-black uppercase tracking-[0.2em] italic">Data Export Protocol <!-- | 客户档案导出 --></span>
-                            </div>
-
-                            <div class="bg-slate-950/50 rounded-2xl p-8 border border-white/5">
-                                <p class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 leading-relaxed">
-                                    The exported CSV file contains the following synchronized parameters:
-                                </p>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-5 text-sm font-bold text-slate-300 tracking-tight">
-                                    <div class="flex items-center gap-2">Customer id</div>
-                                    <div>Full name</div>
-                                    <div>Gender</div>
-                                    <div>Mobile</div>
-                                    <div>Municipality</div>
-                                    <div>Barangay</div>
-                                    <div>Purok</div>
-                                    <div>Card uuid</div>
-                                    <div>Shs machine</div>
-                                    <div>Solar equipment</div>
-                                    <div>Radio</div>
-                                    <div>Flashlight</div>
-                                    <div>Led light</div>
-                                    <div>Total recharge</div>
-                                    <div>Latitude</div>
-                                    <div>Longitude</div>
-                                    <div>Ias</div>
-                                    <div>Date installed</div>
-                                    <div>Ir report no.</div>
-                                    <div>Remarks</div>
-                                    <div>Electric company</div>
-                                    <div>Beneficiary count</div>
-                                    <div>Representative name</div>
-                                    <div>Relationship</div>
-                                    <div>Created date</div>
-                                    <div>Last updated</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Chapter 5: Hardware Management -->
-        <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-            <div class="flex flex-col items-center">
-                <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">05</div>
-                <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-            </div>
-            <div class="flex-1 space-y-12">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="monitor" class="w-8 h-8"></i></div>
-                    <div class="flex flex-col">
-                        <h2 class="text-3xl font-black uppercase italic tracking-tight">Hardware Management</h2>
-                        <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">硬件资产管理</span> -->
-                    </div>
-                </div>
-
-                <div class="bg-primary/5 border-l-4 border-primary p-6 rounded-r-2xl">
-                    <p class="text-slate-300 font-bold leading-relaxed">
-                        Hardware assets are categorized into three protocols:
-                        <span class="text-primary italic">1) IC Cards</span>,
-                        <span class="text-primary italic">2) POS Terminals</span>, and
-                        <span class="text-primary italic">3) Solar Units</span>.
-                    </p>
-                    <!-- <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black mt-2">
-                        硬件资产分为三类协议：1. IC卡管理；2. POS 终端管理；3. 太阳能主机管理。
-                    </p> -->
-                </div>
-
-                <!-- Part A: IC Cards -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part A: IC Card Provisioning <!-- | IC卡录入协议 --></h3>
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                When provisioning new cards, you MUST enter both the <span class="text-white underline decoration-primary">Printed Card Number</span> and the <span class="text-white underline decoration-primary">Physical UID</span> simultaneously. This dual-mapping ensures that assets can be efficiently searched and identified using the visible serial number on the card surface during future audits.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                录入新卡时，必须同步输入卡面印刷的编号以及卡片的物理 UID。这种双重映射机制确保了在后续操作中，可以通过卡面可见的印刷编号快速搜索并识别资产。
-                            </p> -->
-                        </div>
-                    </div>
-                    <div class="space-y-10">
-                        <div class="image-container mt-6">
-                            <img src="./img/img18.png" class="w-full h-auto" />
-                        </div>
-                        <div class="image-container mt-6">
-                            <img src="./img/img19.png" class="w-full h-auto" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Part B: POS Terminals -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part B: POS Terminal Assignment <!-- | POS终端绑定协议 --></h3>
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                To authorize a POS terminal, you must register its <span class="text-white underline decoration-primary">SN (Serial Number)</span> and assign it to a specific operator. Each terminal supports a <span class="text-white italic">strict 1:1 binding</span>; multiple operator logins on a single device are not permitted.
-                            </p>
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                When the terminal is online, the system automatically verifies its registration status and displays the authorized operator credentials on the device dashboard.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                若要启用 POS 终端，必须录入其 SN 序列号并分配给特定的操作员。系统执行严格的“一机一号”绑定机制，不支持多个操作员账号在同一台设备上登录。当 POS 机处于联网状态时，系统会自动检测设备是否已录入，并在设备界面显示所分配的操作员信息。
-                            </p> -->
-                        </div>
-                    </div>
-                    <div class="space-y-10">
-                        <div class="image-container mt-6">
-                            <img src="./img/img20.png" class="w-full h-auto" />
-                        </div>
-                        <div class="image-container mt-6">
-                            <img src="./img/img21.png" class="w-full h-auto" />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Part C: Solar Units -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part C: Solar Unit Provisioning <!-- | 太阳能主机录入协议 --></h3>
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                Solar Home System (SHS) units must be registered in the central registry before deployment. Enter the <span class="text-white underline decoration-primary">Machine ID</span> and associated peripheral details to initialize the hardware lifecycle tracking.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                太阳能家庭系统（SHS）主机在部署前必须在中央注册库中登记。输入机器 ID 及相关外设详情，以启动硬件的全生命周期追踪。
-                            </p> -->
-                        </div>
-                    </div>
-                    <div class="space-y-10">
-                        <div class="image-container mt-6">
-                            <img src="./img/img22.png" class="w-full h-auto" />
-                        </div>
-                        <div class="image-container mt-6">
-                            <img src="./img/img23.png" class="w-full h-auto" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Chapter 6: Financial Management -->
-        <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-            <div class="flex flex-col items-center">
-                <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">06</div>
-                <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-            </div>
-            <div class="flex-1 space-y-12">
-                <div class="flex items-center gap-4">
-                    <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="wallet" class="w-8 h-8"></i></div>
-                    <div class="flex flex-col">
-                        <h2 class="text-3xl font-black uppercase italic tracking-tight">Financial Management</h2>
-                        <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">财务审计管理</span> -->
-                    </div>
-                </div>
-
-                <!-- Part A: Transactions -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part A: Transaction History <!-- | 财务流水 --></h3>
-                        <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                            Monitor real-time cash flow and transaction logs across all regions.
-                        </p>
-                        <!-- <p class="text-[10px] text-slate-500 italic">
-                            实时监控全区域的现金流及交易日志，支持多维度检索与对账。
-                        </p> -->
-                    </div>
-                    <div class="image-container">
-                        <img src="./img/img24.png" class="w-full h-auto" />
-                    </div>
-                </div>
-
-                <!-- Part B: Idle Customers -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part B: Retention & Expiration <!-- | 闲置客户监控 --></h3>
-                        <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                            The "Expired Accounts" view displays customers whose service duration has ended without a subsequent recharge.
-                        </p>
-                        <!-- <p class="text-[10px] text-slate-500 italic">
-                            “到期客户”视图专门显示服务有效期已过且尚未进行下一次充值的用户，便于进行针对性的客户回访与保留。
-                        </p> -->
-                    </div>
-                </div>
-
-                <!-- Part C: Reconciliation -->
-                <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                    <div class="space-y-4">
-                        <h3 class="text-primary font-black uppercase text-xs tracking-[0.3em] italic">Part C: POS Reconciliation Protocol <!-- | POS对账与安全锁 --></h3>
-                        <p class="text-sm text-slate-300 leading-relaxed font-bold text-red-400 uppercase italic tracking-tighter">
-                            Mandatory Security Protocol:
-                        </p>
-                        <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                            POS terminals must be reconciled periodically. If a finance officer fails to verify and confirm the reconciliation status in the system, the associated POS terminal will be <span class="text-red-500 underline">automatically locked</span> for security enforcement.
-                        </p>
-                        <!-- <p class="text-[10px] text-slate-500 italic">
-                            强制安全协议：POS 终端必须定期对账。如果财务人员未在系统中点击确认对账，对应的 POS 机将因安全策略被自动锁定，无法继续进行离线交易。
-                        </p> -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- POS Mode Content Container -->
-        <div id="section-pos" class="manual-section">
-            <header class="mb-24">
-                <h1 class="text-6xl font-black uppercase italic tracking-tighter mb-6 leading-none">Terminal <span class="text-primary">Operations</span></h1>
-                <div class="h-1 w-20 bg-primary"></div>
-            </header>
-
-            <!-- Chapter 1: SN Authorization -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">01</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="shield-alert" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Device Authorization & SN Check</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">设备授权与序列号检测</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                New terminals must be registered in the central system registry to gain access. If the device is not recognized, it will be restricted from entering the operational interface.
-                                <span class="text-white">Action:</span> Ensure the SN is added via the Management Web, then tap the <span class="text-primary underline">REFRESH</span> button on the terminal.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                新的终端设备必须在中央系统中登记授权方可使用。如果设备未在系统中录入，将无法进入操作界面。操作步骤：请先在管理后台录入该设备的 SN 序列号，随后在 POS 终端上点击“刷新”按钮以同步授权状态。
-                            </p> -->
-                        </div>
-                        <div class="image-container mt-6 max-w-[320px] mx-auto border-4 border-slate-700/50 shadow-2xl">
-                            <img src="./img/pos/pos1.png" class="w-full h-auto" />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 2: Security Lockout -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">02</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-red-500 text-white rounded-2xl shadow-lg shadow-red-500/20"><i data-lucide="lock" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight text-red-400">Security Enforcement & Lockout</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">安全锁定与系统恢复</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-red-500/10">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                If the terminal is remotely locked or reconciliation has expired, a <span class="text-red-500">Security Lock</span> screen will be displayed. You must contact an <span class="text-white">Administrator or Finance Officer</span> to authorize an unlock from the backend.
-                            </p>
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                <span class="text-white italic">Note:</span> Once unlocked in the system, tap <span class="text-primary underline font-black">REFRESH</span> on the terminal. An active internet connection is required for this sync.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                若设备被后台远程锁定或因逾期对账触发锁定，终端将显示锁定界面。操作员需联系管理员或财务人员在后台进行解锁。解锁成功后，请确保设备处于联网状态，并点击界面上的“刷新”按钮以恢复系统使用权限。
-                            </p> -->
-                        </div>
-                        <div class="image-container mt-6 max-w-[320px] mx-auto border-4 border-red-900/30 shadow-2xl">
-                            <img src="./img/pos/pos2.png" class="w-full h-auto" />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 3: User Authentication & Regional Binding -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">03</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="user-check" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Login & Regional Protocol</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">身份登录与区域绑定协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                To maintain data integrity, each POS terminal is <span class="text-primary italic">strictly limited</span> to managing customers within its assigned region.
-                            </p>
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold italic">
-                                Authorized Operations: 1. New Customer Registration; 2. Hardware Installation; 3. Account Reloading.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                为了确保数据的准确性与隔离性，每台 POS 终端被严格限制在所分配的特定区域内进行操作（包括：新开户、客户设备安装、充值服务）。跨区域数据访问是不允许的。
-                            </p> -->
-                        </div>
-                        <div class="image-container mt-6 max-w-[320px] mx-auto border-4 border-slate-700/50 shadow-2xl">
-                            <img src="./img/pos/pos3.png" class="w-full h-auto" />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 4: Data Synchronization Protocol -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">04</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-green-500 text-white rounded-2xl shadow-lg shadow-green-500/20"><i data-lucide="refresh-cw" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight text-green-400">Data Synchronization Protocol</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">实时数据同步协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-green-500/10">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                Upon successful login, the system automatically triggers a <span class="text-green-500 italic">background synchronization</span> (internet connection required) to fetch the latest customer whitelist and rates.
-                            </p>
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                <span class="text-white italic">Action:</span> You can also manually trigger a full update by tapping the <span class="text-green-500 underline font-black">GREEN SYNC</span> button on the dashboard.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                登录系统后，POS 终端会自动触发后台数据同步（需联网），以拉取最新的客户白名单及费率配置。手动操作：您也可以点击主界面上的“绿色同步按钮”手动执行完整的数据更新，确保离线操作数据的准确性。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center flex-wrap">
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-green-900/30 shadow-2xl">
-                                <img src="./img/pos/pos4.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-green-900/30 shadow-2xl">
-                                <img src="./img/pos/poshome.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 5: Device Installation Workflow -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">05</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="plus-square" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Hardware Deployment Protocol</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">设备安装流程协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                To initialize a customer's electricity service, you must complete the hardware binding process.
-                                <span class="text-white italic">Action:</span> Tap the <span class="text-primary underline font-black uppercase italic">Device Installation</span> button on the dashboard.
-                            </p>
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                <span class="text-primary italic">System Logic:</span> This directory <span class="underline decoration-primary">only displays customers</span> who have not yet had hardware assigned. You can efficiently locate a specific profile using the <span class="text-white font-black">Search Bar</span> (supports Name or Customer ID).
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                为开启客户的供电服务，必须完成硬件绑定流程。操作步骤：点击仪表盘上的“Device Installation”按钮。系统逻辑：此列表仅会显示尚未安装/绑定设备的客户。您可以使用搜索框通过“姓名”或“客户ID”进行精确筛选。
-                            </p> -->
-                        </div>
-                        <div class="image-container mt-6 max-w-[320px] mx-auto border-4 border-slate-700/50 shadow-2xl">
-                            <img src="./img/pos/pos5.png" class="w-full h-auto" />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 6: Customer & Device Selection -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">06</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="scan-line" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Machine Mapping & QR Selection</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">客户与设备匹配协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                Select the target customer from the list, then assign a specific SHS Machine ID to their profile.
-                                <span class="text-white italic">Efficiency:</span> The system supports <span class="text-primary underline font-black">QR Code Scanning</span> to quickly select and verify the machine serial number without manual input.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                在列表中选择目标客户，随后为其分配特定的太阳能主机 ID。效率提升：系统支持“二维码扫描”功能，无需手动输入即可快速选择并核对设备序列号。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center">
-                            <div class="image-container mt-6 max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos6.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos7.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 7: Initial Recharge & Activation -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">07</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="credit-card" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Initial Recharge & Activation</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">初始充值与写卡激活协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                After successfully mapping the hardware, you must enter the <span class="text-primary italic">Recharge Days</span>. The system will automatically calculate the total amount based on the localized daily rate.
-                            </p>
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold text-red-400">
-                                <span class="text-red-500 italic">Crucial:</span> If the customer fails to complete the payment and write data to the IC card, the entire installation process is considered void and will be aborted.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                匹配设备信息后，需要输入充值天数，系统会自动根据地区每日费率算出应付总金额。重要提示：如果客户最终不付款充值并完成写卡，则视为本次安装流程作废。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center flex-wrap">
-                            <div class="image-container mt-6 w-full max-w-[260px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos8.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[260px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos9.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[260px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos12.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[260px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos10.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 8: Subsequent Recharge -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">08</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="id-card" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Subsequent Recharge Protocol</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">日常充值与读卡识别协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                For subsequent recharges of existing customers, select the <span class="text-primary italic">Recharge</span> function from the terminal dashboard. The operator must first read the customer's IC card to automatically retrieve their bound profile and device information before proceeding with the transaction.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                对于老客户的再次充值，请在终端首页选择“充值”功能。操作员必须首先读取客户的 IC 卡，系统将自动获取并展示该卡绑定的客户档案及设备信息。确认无误后，方可继续输入充值天数并完成写卡流程。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center flex-wrap">
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos11.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos13.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 9: Recharge Execution -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">09</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="banknote" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Recharge Execution & Card Write Protocol</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">充值执行与写卡更新协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                After verifying customer details, enter the desired <span class="text-primary italic">Recharge Days</span>. Confirm the calculated total amount and proceed to tap the IC card against the NFC sensor to write the updated validity period.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                读卡并核对客户信息无误后，在界面输入需要充值的天数，系统将自动计算应收总金额。确认收款后，将该客户的 IC 卡贴近设备的 NFC 感应区，将最新的有效期数据成功写入卡片中，即表示本次充值流程圆满完成。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center flex-wrap">
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos12.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos10.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 10: Data Sync & Offline Protection -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">10</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="cloud-upload" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Offline Sync & Network Validation</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">离线数据同步与网络校验</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                Since most recharges occur in offline environments, the terminal securely queues transaction data locally. When attempting to upload records, the system validates the network connection. If triggered offline accidentally, a prompt will appear requesting internet access to prevent data corruption.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                由于日常充值操作大多在离线状态下进行，POS 终端会将交易流水安全地暂存在本地。当操作员准备上传数据时，系统会自动检测网络状态。如果在无网络环境下误触同步，系统会弹出提示框要求联网，这不仅保障了操作的容错率，也防止了数据混乱或丢失。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center flex-wrap">
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos15.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos14.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 11: Online Sync Confirmation -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">11</div>
-                    <div class="w-px h-full bg-slate-800/50 mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="check-circle" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Online Sync Confirmation & Execution</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">在线数据同步与确认协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                Even when the device is online, initiating a manual data synchronization requires a secondary confirmation to prevent accidental triggers. Once the synchronization process begins, it <span class="text-red-400 italic">cannot be interrupted</span> to guarantee data integrity.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                即使设备处于在线状态，手动触发数据同步时仍会弹出二次确认提示，以防误触。一旦确认并开始同步，为确保本地与云端数据的绝对完整性，该过程将无法被中断，请耐心等待同步完成。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center flex-wrap">
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/poshome.png" class="w-full h-auto" />
-                            </div>
-                            <div class="image-container mt-6 w-full max-w-[320px] border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/pos16.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Chapter 12: Special Tools -->
-            <section class="flex flex-col md:flex-row gap-10 mb-40 group">
-                <div class="flex flex-col items-center">
-                    <div class="step-number text-slate-800 group-hover:text-primary transition-colors duration-500 opacity-100">12</div>
-                    <!-- Last step hides the downward connecting line -->
-                    <div class="w-px h-full bg-transparent mt-4"></div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <div class="flex items-center gap-4">
-                        <div class="p-3 bg-primary text-slate-950 rounded-2xl shadow-lg shadow-primary/20"><i data-lucide="wrench" class="w-8 h-8"></i></div>
-                        <div class="flex flex-col">
-                            <h2 class="text-3xl font-black uppercase italic tracking-tight">Special Tools & Advanced Card Operations</h2>
-                            <!-- <span class="text-slate-500 font-bold uppercase text-sm tracking-widest">特殊工具与超级卡制作协议</span> -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-8 bg-slate-900/50 p-10 rounded-[2.5rem] border border-white/5">
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-300 leading-relaxed font-bold">
-                                Special tools can be permanently authorized for <span class="text-primary italic">Admin accounts</span> or temporarily granted to <span class="text-primary italic">Operator accounts</span>. These tools enable advanced technical operations such as formatting/resetting physical IC cards and creating <span class="text-white italic">Supercards (Preset Cards)</span> for special deployment scenarios.
-                            </p>
-                            <!-- <p class="text-[10px] text-slate-500 italic">
-                                特殊工具权限通常默认向 Admin 账户开放，或根据业务需求临时授权给操作员（Opera）账户。通过该特殊工具菜单，技术人员可以执行高级操作，例如：对实体 IC 卡进行格式化与重置，以及制作超级卡（Supercard / Preset Card）以应对特殊的离线部署或测试场景。
-                            </p> -->
-                        </div>
-                        <div class="flex flex-col md:flex-row gap-6 justify-center flex-wrap">
-                            <div class="image-container mt-6 w-full max-w-[320px] mx-auto border-4 border-slate-700/50 shadow-2xl">
-                                <img src="./img/pos/postool.png" class="w-full h-auto" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Footer -->
-        <footer class="mt-40 pt-12 border-t border-slate-800 text-center">
-            <div class="flex items-center justify-center gap-2 mb-4">
-                <i data-lucide="zap" class="w-3 h-3 text-slate-600 fill-current"></i>
-                <p class="text-[10px] font-black uppercase tracking-[0.5em] text-slate-600 italic">
-                    SHS Electrification Management Protocol v1.0
+            <header class="mb-20">
+                <h1 class="text-7xl font-black italic uppercase tracking-tighter leading-none mb-4">
+                    <span lang="en">Web Portal</span><span lang="cn">管理后台</span>
+                </h1>
+                <p class="text-slate-400 text-lg">
+                    <span lang="en">Comprehensive operations guide for administrators.</span>
+                    <span lang="cn">针对系统管理员及管理人员的详细操作手册。</span>
                 </p>
+            </header>
+
+            <!-- STEP 1 -->
+            <div class="bg-slate-800/30 p-10 rounded-[2rem] border border-white/5 mb-12 print-card">
+                <div class="flex items-center gap-4 mb-6">
+                    <span class="text-5xl font-black italic text-primary/20">01</span>
+                    <h3 class="text-3xl font-black uppercase italic">
+                        <span lang="en">Authentication</span><span lang="cn">身份验证</span>
+                    </h3>
+                </div>
+                <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                    <span lang="en">Access the system using default credentials. A password reset is mandatory on first login.</span>
+                    <span lang="cn">使用默认凭据访问系统。首次登录时必须重置密码。</span>
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                     <div class="image-container"><img src="./img/img1.png" onclick="openLightbox(this.src)"></div>
+                     <div class="image-container"><img src="./img/img3.png" onclick="openLightbox(this.src)"></div>
+                </div>
             </div>
-            <p class="text-[9px] text-slate-700 uppercase font-bold tracking-widest">Authorized Access Only • Proprietary Assets</p>
-        </footer>
+
+            <!-- STEP 2 -->
+            <div class="bg-slate-800/30 p-10 rounded-[2rem] border border-white/5 mb-12 print-card">
+                <div class="flex items-center gap-4 mb-6">
+                    <span class="text-5xl font-black italic text-primary/20">02</span>
+                    <h3 class="text-3xl font-black uppercase italic">
+                        <span lang="en">Organization setup</span><span lang="cn">组织机构设置</span>
+                    </h3>
+                </div>
+                <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                    <span lang="en">Configure company logo, TIN, and address. This appears on all consumer receipts.</span>
+                    <span lang="cn">配置公司 Logo、税号和地址。这些信息将显示在所有客户收据上。</span>
+                </p>
+                <div class="image-container"><img src="./img/img2.png" onclick="openLightbox(this.src)"></div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="bg-slate-800/30 p-10 rounded-[2rem] border border-white/5 mb-12 print-card">
+                <div class="flex items-center gap-4 mb-6">
+                    <span class="text-5xl font-black italic text-primary/20">03</span>
+                    <h3 class="text-3xl font-black uppercase italic">
+                        <span lang="en">Regional & Rates</span><span lang="cn">区域与费率</span>
+                    </h3>
+                </div>
+                <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                    <span lang="en">Build your service hierarchy and define pricing for each district.</span>
+                    <span lang="cn">构建服务层级并为每个区域定义电费价格。</span>
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="image-container"><img src="./img/img6.png" onclick="openLightbox(this.src)"></div>
+                    <div class="image-container"><img src="./img/img9.png" onclick="openLightbox(this.src)"></div>
+                </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="bg-slate-800/30 p-10 rounded-[2rem] border border-white/5 mb-12 print-card">
+                <div class="flex items-center gap-4 mb-6">
+                    <span class="text-5xl font-black italic text-primary/20">04</span>
+                    <h3 class="text-3xl font-black uppercase italic">
+                        <span lang="en">Team Management</span><span lang="cn">团队管理</span>
+                    </h3>
+                </div>
+                <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                    <span lang="en">Manage user profiles and reset passwords for operators.</span>
+                    <span lang="cn">管理用户资料并为操作员重置密码。</span>
+                </p>
+                <div class="image-container"><img src="./img/img12.png" onclick="openLightbox(this.src)"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="image-container"><img src="./img/img25.png" onclick="openLightbox(this.src)"></div>
+                    <div class="image-container"><img src="./img/img26.png" onclick="openLightbox(this.src)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION B: POS TERMINAL -->
+        <div id="section-pos" class="manual-section">
+            <header class="mb-20">
+                <h1 class="text-7xl font-black italic uppercase tracking-tighter leading-none mb-4">
+                    <span lang="en">POS Terminal</span><span lang="cn">POS 终端</span>
+                </h1>
+                <p class="text-slate-400 text-lg">
+                    <span lang="en">Field operations guide for local area operators.</span>
+                    <span lang="cn">针对当地操作员的现场操作指南。</span>
+                </p>
+            </header>
+
+            <div class="bg-slate-800/30 p-10 rounded-[2rem] border border-white/5 mb-12 print-card text-center">
+                <div class="flex justify-center items-center gap-4 mb-6">
+                    <span class="text-5xl font-black italic text-primary/20">01</span>
+                    <h3 class="text-3xl font-black uppercase italic">
+                        <span lang="en">Collection</span><span lang="cn">收费流程</span>
+                    </h3>
+                </div>
+                <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                    <span lang="en">Process payments via QR scan or ID entry.</span>
+                    <span lang="cn">通过扫描二维码或输入 ID 处理付款。</span>
+                </p>
+                <div class="image-container max-w-sm mx-auto"><img src="./img/img15.png" onclick="openLightbox(this.src)"></div>
+            </div>
+        </div>
+
     </main>
 
     <script>
-        lucide.createIcons();
-
-        // 💡 Mode switch logic
-        function switchMode(mode) {
-            // Switch tab states
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(`tab-${mode}`).classList.add('active');
-
-            // Switch content area
-            document.querySelectorAll('.manual-section').forEach(sec => sec.classList.remove('active'));
-            document.getElementById(`section-${mode}`).classList.add('active');
-
-            // Scroll to top
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Language Logic
+        function setLang(lang) {
+            document.documentElement.setAttribute('lang', lang);
+            document.getElementById('lang-en').classList.toggle('text-primary', lang === 'en');
+            document.getElementById('lang-en').classList.toggle('text-slate-500', lang !== 'en');
+            document.getElementById('lang-cn').classList.toggle('text-primary', lang === 'cn');
+            document.getElementById('lang-cn').classList.toggle('text-slate-500', lang !== 'cn');
+            localStorage.setItem('manual-lang', lang);
         }
 
-        // 💡 Handle image click lightbox logic
-        const lightbox = document.getElementById('lightbox');
-        const lightboxImg = lightbox.querySelector('img');
+        // Theme Logic
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark');
+            document.body.classList.toggle('light', !isDark);
+            localStorage.setItem('manual-theme', isDark ? 'dark' : 'light');
+        }
 
-        document.querySelectorAll('.image-container img').forEach(img => {
-            img.onclick = (e) => {
-                lightboxImg.src = e.target.src;
-                lightbox.classList.add('active');
-            };
-        });
+        // Mode Switch
+        function switchMode(mode) {
+            document.querySelectorAll('.manual-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('section-' + mode).classList.add('active');
+            document.getElementById('tab-' + mode).classList.add('active');
+            window.scrollTo(0,0);
+        }
 
-        // 💡 Add ESC key to close lightbox logic for better UX
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-                lightbox.classList.remove('active');
-            }
+        function openLightbox(src) {
+            const lb = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            img.src = src;
+            lb.style.display = 'flex';
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('manual-lang') || 'en';
+            setLang(savedLang);
+            const savedTheme = localStorage.getItem('manual-theme') || 'dark';
+            if (savedTheme === 'light') toggleTheme();
+            lucide.createIcons();
         });
     </script>
 </body>

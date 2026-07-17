@@ -577,7 +577,7 @@ export default function FinancePage() {
                     <TableHead className="w-[30%] py-6 px-10 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Transaction Detail</TableHead>
                     <TableHead className="w-[20%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Amount</TableHead>
                     <TableHead className="w-[20%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">POS/Operator</TableHead>
-                    <TableHead className="w-[15%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Date & Time</TableHead>
+                    <TableHead className="w-[15%] font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Date & Time</TableHead>
                     <TableHead className="w-[15%] text-right pr-10 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Type</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -616,10 +616,10 @@ export default function FinancePage() {
                             <span className="text-[9px] font-black text-slate-400 italic">@{trx.operator_username}</span>
                          </div>
                       </TableCell>
-                      <TableCell className="align-middle">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{trx.transaction_time.split(' ')[0]}</span>
-                          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{trx.transaction_time.split(' ')[1]?.substring(0, 5)}</span>
+                      <TableCell className="align-middle px-8 text-right">
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{trx.transaction_time?.replace('T', ' ').split(' ')[0]}</span>
+                          <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{trx.transaction_time?.replace('T', ' ').split(' ')[1]?.substring(0, 5)}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right pr-10 align-middle">
