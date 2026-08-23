@@ -330,6 +330,17 @@ export default function FinancePage() {
     return () => clearTimeout(timer);
   }, [fetchFinanceData]);
 
+  // Handle SSE data refresh
+  useEffect(() => {
+    const handleRefresh = (e: any) => {
+      if (e.detail?.event === 'POS_RECHARGE_UPLOADED' || e.detail?.event === 'POS_DATA_SYNCED') {
+        fetchFinanceData();
+      }
+    };
+    window.addEventListener('shs-data-refresh', handleRefresh as EventListener);
+    return () => window.removeEventListener('shs-data-refresh', handleRefresh as EventListener);
+  }, [fetchFinanceData]);
+
   // Reset to page 1 when filters or page size change
   useEffect(() => {
     setCurrentPage(1);

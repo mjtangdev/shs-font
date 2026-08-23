@@ -246,6 +246,17 @@ export default function CardsPage() {
   useEffect(() => { fetchRegions(); }, [fetchRegions]);
   useEffect(() => { fetchCards(); }, [fetchCards]);
 
+  // Handle SSE data refresh
+  useEffect(() => {
+    const handleRefresh = (e: any) => {
+      if (e.detail?.event === 'CARD_REGISTERED') {
+        fetchCards();
+      }
+    };
+    window.addEventListener('shs-data-refresh', handleRefresh as EventListener);
+    return () => window.removeEventListener('shs-data-refresh', handleRefresh as EventListener);
+  }, [fetchCards]);
+
   // Reset to page 1 when filter, search, or page size changes
   useEffect(() => {
     setCurrentPage(1);

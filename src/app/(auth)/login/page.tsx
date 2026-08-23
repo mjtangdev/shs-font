@@ -6,7 +6,7 @@ import apiClient from '@/lib/axios';
 import { ASSETS } from '@/lib/assets/images'; 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Loader2, Lock, User, ArrowRight } from 'lucide-react';
 import { FlickeringGrid } from "@/components/ui/flickering-grid";
@@ -207,7 +207,7 @@ export default function SolarWhiteLoginPage() {
         }
       ` }} />
 
-      <Toaster position="top-center" richColors />
+
 
       <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
         <ThemeToggle />

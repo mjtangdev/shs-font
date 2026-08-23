@@ -120,6 +120,17 @@ export default function POSPage() {
 
   useEffect(() => { fetchTerminals(); }, [searchQuery, currentPage, pageSize]);
 
+  // Handle SSE data refresh
+  useEffect(() => {
+    const handleRefresh = (e: any) => {
+      if (e.detail?.event === 'POS_REGISTERED') {
+        fetchTerminals();
+      }
+    };
+    window.addEventListener('shs-data-refresh', handleRefresh as EventListener);
+    return () => window.removeEventListener('shs-data-refresh', handleRefresh as EventListener);
+  }, []);
+
   // Reset to page 1 when filters or page size change
   useEffect(() => {
     setCurrentPage(1);

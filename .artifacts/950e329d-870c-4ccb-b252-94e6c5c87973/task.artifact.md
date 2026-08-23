@@ -1,0 +1,10 @@
+- `[x]` Disable Monitoring Dashboard for Production
+    - `[x]` Force `legacy` mode in `useHardwareMode.ts`
+    - `[x]` Hide toggle button in `Navbar.tsx`
+- `[x]` Adapt Build Process to pnpm
+    - `[x]` Update `Dockerfile` to install and use `pnpm`
+    - `[x]` Remove obsolete `package-lock.json`
+- `[x]` UI Branding Update
+    - `[x]` Replace Zap icon with custom `logo.jpg` in `Navbar`
+    - `[x]` Implement fallback mechanism for missing logo assets
+- `[ ]` Verify successful Docker build and push
