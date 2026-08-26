@@ -435,9 +435,14 @@ export default function CardsPage() {
                               </div>
                               <div className="flex items-center gap-3">
                                 <span className="text-[8px] font-bold text-slate-400/60 uppercase">Cust ID: {card.customer_uuid}</span>
-                                <div className="flex items-center gap-1.5 text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-widest uppercase italic">
-                                   <MapPin size={10} /> {card.city_name} / {card.town_name}
+                              <div className="flex flex-col items-start gap-0.5 mt-1">
+                                <div className="flex items-center gap-1.5 text-[9px] text-slate-400 dark:text-slate-500 font-bold tracking-widest uppercase italic leading-none">
+                                   <MapPin size={10} /> {card.city_name}
                                 </div>
+                                <div className="text-[8px] text-slate-300 dark:text-slate-600 font-black uppercase tracking-widest pl-4 leading-none">
+                                   {card.town_name}
+                                </div>
+                              </div>
                               </div>
                             </Link>
                           ) : (

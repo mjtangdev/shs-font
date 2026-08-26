@@ -466,8 +466,13 @@ export default function SolarUnitPage() {
                                    Unassigned
                                 </div>
                             )}
-                            <div className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
-                               {unit.city_name} • {unit.town_name}
+                            <div className="flex flex-col items-center gap-1 mt-1">
+                               <div className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
+                                  {unit.city_name}
+                               </div>
+                               <div className="text-[8px] font-black uppercase text-slate-400 dark:text-slate-600 tracking-tighter italic">
+                                  {unit.town_name}
+                               </div>
                             </div>
                           </div>
                         </TableCell>

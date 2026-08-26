@@ -489,6 +489,8 @@ export default function CustomerProfilePage() {
 
                 {/* Information Blocks */}
                 {[
+                  { label: 'First Name', value: formData.first_name, key: 'first_name', icon: UserCircle2, editable: true },
+                  { label: 'Last Name', value: formData.last_name, key: 'last_name', icon: UserCircle2, editable: true },
                   { label: 'Mobile Number', value: formData.mobile, key: 'mobile', icon: Phone, editable: true },
                   { label: 'Email Address', value: formData.email || 'Not Provided', key: 'email', icon: Mail, editable: true },
                   { label: 'Beneficiary Count', value: formData.beneficiary_count, key: 'beneficiary_count', icon: Users, editable: true, type: 'number' },
@@ -502,7 +504,7 @@ export default function CustomerProfilePage() {
                       <input
                         type={field.type || 'text'}
                         className="w-full bg-transparent border-b border-slate-200 dark:border-white/10 py-1 text-lg font-bold outline-none focus:border-primary transition-all text-slate-900 dark:text-slate-100"
-                        value={field.value}
+                        value={formData[field.key]}
                         onChange={(e) => setFormData({...formData, [field.key]: field.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value})}
                       />
                     ) : (

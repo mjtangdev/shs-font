@@ -264,7 +264,20 @@ export default function ExpiredCustomersPage() {
                                </div>
                                <div className="flex flex-col gap-0.5">
                                  <span className="font-black italic text-slate-900 dark:text-slate-100 text-[16px] uppercase tracking-tight leading-tight group-hover:text-primary transition-colors">{cust.first_name} {cust.last_name}</span>
-                                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5"><MapPin size={10} /> {cust.region_name}</span>
+                                 <div className="flex flex-col items-start gap-1 mt-1">
+                                   {(cust.region_name || '').split(/[>|/]\s*/).map((part: string, idx: number) => (
+                                     <Badge
+                                       key={idx}
+                                       className={cn(
+                                         "bg-transparent border-none p-0 h-auto font-black text-[8px] uppercase tracking-widest flex items-center gap-1.5",
+                                         idx === 0 ? "text-slate-400 dark:text-slate-500" : "text-slate-300 dark:text-slate-600"
+                                       )}
+                                     >
+                                       {idx === 0 && <MapPin size={10} />}
+                                       {part.trim()}
+                                     </Badge>
+                                   ))}
+                                 </div>
                                </div>
                             </div>
                           </TableCell>

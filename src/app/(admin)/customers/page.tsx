@@ -385,9 +385,19 @@ export default function CustomerPage() {
                           <span className="text-[13px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tight">{c.mobile}</span>
                         </TableCell>
                         <TableCell className="text-center align-middle">
-                          <Badge className="bg-primary/10 text-primary border-none px-3 py-1 rounded-full font-black text-[8px] uppercase shadow-sm mx-auto">
-                            {c.region_name}
-                          </Badge>
+                          <div className="flex flex-col items-center gap-1.5 py-1">
+                            {(c.region_name || '').split(/[>|/•,]\s*/).map((part: string, index: number) => (
+                              <Badge
+                                key={index}
+                                className={cn(
+                                  "border-none px-2.5 py-0.5 rounded-md font-black text-[8px] uppercase shadow-sm tracking-tight",
+                                  index === 0 ? "bg-primary/10 text-primary" : "bg-slate-100 dark:bg-white/5 text-slate-500"
+                                )}
+                              >
+                                {part.trim()}
+                              </Badge>
+                            ))}
+                          </div>
                         </TableCell>
                         <TableCell className="align-middle px-8 text-right">
                           <div className="flex flex-col items-end gap-0.5">
@@ -412,32 +422,26 @@ export default function CustomerPage() {
                             </Button>
 
                             {userRole === "1" && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => router.push(`/customers/${c.id}?edit=true`)}
-                                  className="text-slate-300 dark:text-slate-600 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                  title="Edit Profile"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCustomerToDelete(c);
-                                    setDeletePassword("");
-                                    setIsDeleteDialogOpen(true);
-                                  }}
-                                  className="text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
-                                  title="Delete Record"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={c.is_bound}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCustomerToDelete(c);
+                                  setDeletePassword("");
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                                className={cn(
+                                  "rounded-lg transition-colors",
+                                  c.is_bound
+                                    ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
+                                    : "text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                )}
+                                title={c.is_bound ? "Bound customers cannot be deleted" : "Delete Record"}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             )}
                           </div>
                         </TableCell>
@@ -542,10 +546,21 @@ export default function CustomerPage() {
             <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 dark:text-slate-100">
               Admin Authorization
             </DialogTitle>
-            <DialogDescription className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">
-              Enter admin password to delete{" "}
-              <span className="text-slate-900 dark:text-slate-100">{customerToDelete?.first_name}</span>
-            </DialogDescription>
+            <div className="space-y-3">
+              <DialogDescription className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">
+                Enter admin password to delete{" "}
+                <span className="text-slate-900 dark:text-slate-100">{customerToDelete?.first_name} {customerToDelete?.last_name}</span>
+              </DialogDescription>
+
+              <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl flex items-start gap-3">
+                <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={16} />
+                <div className="flex flex-col gap-1">
+                  <p className="text-[9px] font-black uppercase tracking-tighter text-amber-600 dark:text-amber-400 leading-tight text-left">
+                    System Restriction: Only accounts with NO transaction history and NO active hardware binding can be removed.
+                  </p>
+                </div>
+              </div>
+            </div>
           </DialogHeader>
           <div className="py-6">
             <Input
