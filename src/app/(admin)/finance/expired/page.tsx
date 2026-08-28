@@ -52,14 +52,14 @@ function RegionNode({
   const hasChildren = node.children && node.children.length > 0;
 
   return (
-    <div className="w-full select-none">
-      <div onClick={() => onSelect(isSelected ? null : node.id)} className={cn("flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1", isSelected ? "bg-primary text-white shadow-lg shadow-primary/20" : isRoot ? "bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 font-bold hover:bg-slate-100 dark:hover:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400")} style={{ paddingLeft: `${depth * 16 + 12}px` }}>
-        <div onClick={(e) => { if (isRoot) return; e.stopPropagation(); setIsOpen(!isOpen); }} className={cn("w-4 h-4 flex items-center justify-center rounded transition-colors", !isRoot && "hover:bg-black/5 dark:hover:bg-white/10")}>
+    <div className="w-full min-w-0 select-none">
+      <div onClick={() => onSelect(isSelected ? null : node.id)} className={cn("flex items-start gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1 w-full min-w-0 box-border", isSelected ? "bg-primary text-white shadow-lg shadow-primary/20" : isRoot ? "bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 font-bold hover:bg-slate-100 dark:hover:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400")} style={{ paddingLeft: `${depth * 16 + 12}px` }}>
+        <div onClick={(e) => { if (isRoot) return; e.stopPropagation(); setIsOpen(!isOpen); }} className={cn("w-4 h-4 flex items-center justify-center rounded transition-colors shrink-0 mt-0.5", !isRoot && "hover:bg-black/5 dark:hover:bg-white/10")}>
           {hasChildren && !isRoot && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
-          {isRoot && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1" /> }
+          {isRoot && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1 shrink-0" /> }
         </div>
-        {node.level === 0 ? <Building2 className="h-3.5 w-3.5" /> : node.level === 1 ? <MapPin className="h-3 w-3" /> : <Home className="h-3 w-3" />}
-        <span className={cn("text-sm truncate flex-1 tracking-tight", isRoot ? "text-base font-black uppercase" : "font-semibold")}>{node.name}</span>
+        {node.level === 0 ? <Building2 className="h-3.5 w-3.5 shrink-0 mt-0.5" /> : node.level === 1 ? <MapPin className="h-3 w-3 shrink-0 mt-0.5" /> : <Home className="h-3 w-3 shrink-0 mt-0.5" />}
+        <span className={cn("text-sm break-all whitespace-normal min-w-0 flex-1 tracking-tight leading-snug", isRoot ? "text-base font-black uppercase" : "font-semibold")}>{node.name}</span>
       </div>
       {hasChildren && (isRoot || isOpen) && (
         <div className="relative my-0.5">

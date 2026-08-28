@@ -90,17 +90,17 @@ function RegionNode({
   const hasChildren = node.children && node.children.length > 0;
 
   const getIcon = () => {
-    if (isRoot) return <Building2 className={cn("h-3.5 w-3.5", isSelected ? "text-white" : "text-primary")} />;
-    if (node.level === 1) return <MapPin className={cn("h-3 w-3", isSelected ? "text-white" : "text-slate-400")} />;
-    return <Home className={cn("h-3 w-3", isSelected ? "text-white" : "text-slate-400")} />;
+    if (isRoot) return <Building2 className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", isSelected ? "text-white" : "text-primary")} />;
+    if (node.level === 1) return <MapPin className={cn("h-3 w-3 shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
+    return <Home className={cn("h-3 w-3 shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
   };
 
   return (
-    <div className="w-full select-none">
+    <div className="w-full min-w-0 select-none">
       <div
         onClick={() => onSelect(isSelected ? null : node.id)}
         className={cn(
-          "flex items-center gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group mb-1",
+          "flex items-start gap-2 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer group mb-1 w-full min-w-0 box-border",
           isSelected
             ? "bg-primary text-white shadow-lg shadow-primary/20"
             : isRoot
@@ -116,15 +116,15 @@ function RegionNode({
             setIsOpen(!isOpen);
           }}
           className={cn(
-            "w-4 h-4 flex items-center justify-center rounded transition-colors",
+            "w-4 h-4 flex items-center justify-center rounded transition-colors shrink-0 mt-0.5",
             !isRoot && "hover:bg-black/5 dark:hover:bg-white/10"
           )}
         >
           {hasChildren && !isRoot && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
-          {isRoot && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1" />}
+          {isRoot && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1 shrink-0" />}
         </div>
         {getIcon()}
-        <span className={cn("text-sm truncate flex-1 tracking-tight", isRoot ? "text-base font-black uppercase" : "font-semibold", isSelected ? "text-white" : "text-slate-700 dark:text-slate-300")}>
+        <span className={cn("text-sm break-all whitespace-normal min-w-0 flex-1 tracking-tight leading-snug", isRoot ? "text-base font-black uppercase" : "font-semibold", isSelected ? "text-white" : "text-slate-700 dark:text-slate-300")}>
           {node.name}
         </span>
       </div>

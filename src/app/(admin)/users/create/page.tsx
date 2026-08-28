@@ -151,7 +151,7 @@ export default function CreateUserPage() {
       };
 
       return (
-        <div key={node.id} className="select-none">
+        <div key={node.id} className="select-none min-w-0 w-full">
           <div
             onClick={() => {
               if (formData.role === 2 && node.level === 1) {
@@ -169,14 +169,14 @@ export default function CreateUserPage() {
             }}
             title={getLevelLabel(node.level)}
             className={cn(
-              "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent",
+              "flex items-start justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent min-w-0 w-full box-border",
               !isSelectable && node.level !== 1 ? "opacity-30 cursor-not-allowed grayscale" : "cursor-pointer",
               isSelected ? "bg-primary/10 border-primary" : (isSelectable || node.level === 1) ? "hover:bg-slate-50 border-slate-50" : ""
             )}
-            style={{ marginLeft: `${(node.level - 1) * 20}px` }}
+            style={{ paddingLeft: `${(node.level - 1) * 24 + 24}px` }}
           >
-            <div className="flex items-center gap-5 flex-1">
-              <div className="w-8 flex justify-center">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <div className="w-6 flex justify-center shrink-0 mt-1">
                 {node.level === 1 && hasChildren && (
                   <button 
                     type="button"
@@ -184,15 +184,15 @@ export default function CreateUserPage() {
                         e.stopPropagation();
                         toggleExpand(node.id, e);
                     }}
-                    className="text-slate-400 p-2 hover:bg-slate-200 rounded-lg"
+                    className="text-slate-400 p-1 hover:bg-slate-200 rounded-lg"
                   >
-                    {isExpanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
+                    {isExpanded ? <ChevronDown size={22} /> : <ChevronRight size={22} />}
                   </button>
                 )}
               </div>
-              <div className="flex flex-col text-left">
+              <div className="flex flex-col text-left min-w-0 flex-1">
                 <span className={cn(
-                  "text-[18px] font-bold tracking-tight text-slate-900",
+                  "text-[18px] font-bold tracking-tight text-slate-900 break-all whitespace-normal leading-snug",
                   isSelected && "text-primary",
                   !isSelectable && "text-slate-400"
                 )}>
@@ -203,7 +203,7 @@ export default function CreateUserPage() {
                 </span>
               </div>
             </div>
-            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in" />}
+            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in shrink-0 ml-2 mt-0.5" />}
           </div>
           {hasChildren && isExpanded && renderTreeRows(node.children, node.name)}
         </div>
@@ -349,7 +349,7 @@ export default function CreateUserPage() {
                       <ChevronDown size={24} className="text-slate-300 group-hover:text-slate-900" />
                     </button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
+                  <DialogContent className="max-w-[750px] w-[92vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
                     <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
                       <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Select Region</DialogTitle>
                       <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>

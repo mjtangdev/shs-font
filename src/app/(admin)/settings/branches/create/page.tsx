@@ -110,7 +110,7 @@ export default function CreateEntityPage() {
       const isSelected = formData.region_id === node.id;
 
       return (
-        <div key={node.id} className="select-none">
+        <div key={node.id} className="select-none min-w-0 w-full">
           <div 
             onClick={() => {
               if (!node.is_occupied) {
@@ -123,32 +123,32 @@ export default function CreateEntityPage() {
               }
             }}
             className={cn(
-              "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent cursor-pointer",
+              "flex items-start justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent cursor-pointer min-w-0 w-full box-border",
               isSelected ? "bg-primary/10 border-primary" : "hover:bg-slate-50 border-slate-50"
             )}
-            style={{ marginLeft: `${(node.level - 1) * 20}px` }}
+            style={{ paddingLeft: `${(node.level - 1) * 24 + 24}px` }}
           >
-            <div className="flex items-center gap-5 flex-1">
-              <div className="w-8 flex justify-center">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <div className="w-6 flex justify-center shrink-0 mt-1">
                 {node.level === 1 && hasChildren && (
                   <button 
                     type="button"
                     onClick={(e) => toggleExpand(node.id, e)} 
-                    className="text-slate-400 p-2 hover:bg-slate-200 rounded-lg"
+                    className="text-slate-400 p-1 hover:bg-slate-200 rounded-lg"
                   >
-                    {isExpanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
+                    {isExpanded ? <ChevronDown size={22} /> : <ChevronRight size={22} />}
                   </button>
                 )}
               </div>
               <span className={cn(
-                "text-[18px] font-bold tracking-tight",
+                "text-[18px] font-bold tracking-tight break-all whitespace-normal min-w-0 flex-1 leading-snug",
                 node.is_occupied ? 'text-slate-200' : 'text-slate-900',
                 isSelected && "text-primary"
               )}>
                 {node.name}
               </span>
             </div>
-            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in" />}
+            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in shrink-0 ml-2 mt-0.5" />}
           </div>
           {hasChildren && isExpanded && renderTreeRows(node.children, node.name)}
         </div>
@@ -213,7 +213,7 @@ export default function CreateEntityPage() {
                     <ChevronDown size={24} className="text-slate-300 group-hover:text-slate-900" />
                   </button>
                 </DialogTrigger>
-                <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
+                <DialogContent className="max-w-[750px] w-[92vw] p-0 border-none rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-slate-900/60 outline-none">
                   <DialogHeader className="p-10 bg-white dark:bg-slate-900/60 border-b border-slate-50">
                     <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900">Select Region</DialogTitle>
                     <DialogDescription className="hidden">Selection of organizational nodes</DialogDescription>

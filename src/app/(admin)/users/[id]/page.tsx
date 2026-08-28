@@ -158,7 +158,7 @@ export default function UserProfilePage() {
       const isSelectable = formData.role !== 2 || node.level === 2;
 
       return (
-        <div key={node.id} className="select-none">
+        <div key={node.id} className="select-none min-w-0 w-full">
           <div
             onClick={() => {
               if (formData.role === 2 && node.level === 1) {
@@ -174,20 +174,20 @@ export default function UserProfilePage() {
               setIsDialogOpen(false);
             }}
             className={cn(
-              "flex items-center justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent",
+              "flex items-start justify-between px-6 py-5 rounded-xl transition-all mb-1 border-2 border-transparent min-w-0 w-full box-border",
               !isSelectable && node.level !== 1 ? "opacity-30 cursor-not-allowed grayscale" : "cursor-pointer",
               isSelected ? "bg-primary/10 border-primary" : (isSelectable || node.level === 1) ? "hover:bg-slate-50 border-slate-50" : ""
             )}
-            style={{ marginLeft: `${(node.level - 1) * 20}px` }}
+            style={{ paddingLeft: `${(node.level - 1) * 24 + 24}px` }}
           >
-            <div className="flex items-center gap-5 flex-1">
-              <div className="w-8 flex justify-center">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <div className="w-6 flex justify-center shrink-0 mt-1">
                 {node.level === 1 && hasChildren && (
-                   <ChevronDown size={24} className={cn("text-slate-400 transition-transform", !isExpanded && "-rotate-90")} />
+                   <ChevronDown size={22} className={cn("text-slate-400 transition-transform", !isExpanded && "-rotate-90")} />
                 )}
               </div>
-              <div className="flex flex-col text-left">
-                <span className={cn("text-[18px] font-bold tracking-tight text-slate-900", isSelected && "text-primary", !isSelectable && "text-slate-400")}>
+              <div className="flex flex-col text-left min-w-0 flex-1">
+                <span className={cn("text-[18px] font-bold tracking-tight text-slate-900 break-all whitespace-normal leading-snug", isSelected && "text-primary", !isSelectable && "text-slate-400")}>
                   {node.name}
                 </span>
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mt-1">
@@ -195,7 +195,7 @@ export default function UserProfilePage() {
                 </span>
               </div>
             </div>
-            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in" />}
+            {isSelected && <CheckCircle2 size={26} className="text-primary animate-in zoom-in shrink-0 ml-2 mt-0.5" />}
           </div>
           {hasChildren && isExpanded && renderTreeRows(node.children, node.name)}
         </div>
@@ -283,7 +283,7 @@ export default function UserProfilePage() {
                         <ChevronDown size={28} className="text-slate-300" />
                       </button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-[520px] w-[95vw] p-0 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900 outline-none overflow-hidden">
+                    <DialogContent className="max-w-[750px] w-[92vw] p-0 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900 outline-none overflow-hidden">
                       <DialogHeader className="p-10 border-b border-slate-50 dark:border-slate-800 shrink-0">
                         <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter dark:text-white">Regional Hierarchy</DialogTitle>
                         <DialogDescription className="sr-only">Assign new jurisdiction</DialogDescription>

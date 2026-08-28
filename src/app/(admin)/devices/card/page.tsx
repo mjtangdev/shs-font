@@ -87,17 +87,17 @@ function RegionNode({
   const hasChildren = node.children && node.children.length > 0;
 
   const getIcon = () => {
-    if (isMunicipality) return <Building2 size={14} className={isSelected ? "text-white" : "text-primary"} />;
-    if (node.level === 1) return <MapPin size={12} className={isSelected ? "text-white" : "text-slate-400"} />;
-    return <Home size={12} className={isSelected ? "text-white" : "text-slate-400"} />;
+    if (isMunicipality) return <Building2 size={14} className={cn("shrink-0 mt-0.5", isSelected ? "text-white" : "text-primary")} />;
+    if (node.level === 1) return <MapPin size={12} className={cn("shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
+    return <Home size={12} className={cn("shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
   };
 
   return (
-    <div className="w-full select-none">
+    <div className="w-full min-w-0 select-none">
       <div
         onClick={() => onSelect(isSelected ? null : node.id)}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1",
+          "flex items-start gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1 w-full min-w-0 box-border",
           isSelected
             ? "bg-primary text-white shadow-md shadow-primary/20"
             : isMunicipality
@@ -113,17 +113,17 @@ function RegionNode({
             setIsOpen(!isOpen);
           }}
           className={cn(
-            "w-4 h-4 flex items-center justify-center rounded transition-colors",
+            "w-4 h-4 flex items-center justify-center rounded transition-colors shrink-0 mt-0.5",
             !isMunicipality && "hover:bg-black/5 dark:hover:bg-white/10"
           )}
         >
           {hasChildren && !isMunicipality && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
-          {isMunicipality && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1" />}
+          {isMunicipality && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1 shrink-0" />}
         </div>
         {getIcon()}
         <span
           className={cn(
-            "text-[11px] truncate flex-1 tracking-tight",
+            "text-[11px] break-all whitespace-normal min-w-0 flex-1 tracking-tight leading-snug",
             isMunicipality ? "font-black uppercase" : "font-semibold",
             isSelected ? "text-white" : "text-slate-700 dark:text-slate-300"
           )}

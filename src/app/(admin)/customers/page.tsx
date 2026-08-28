@@ -72,9 +72,9 @@ function RegionNode({
   const hasChildren = node.children && node.children.length > 0;
 
   const getIcon = () => {
-    if (isMunicipality) return <Building2 className={cn("h-3.5 w-3.5", isSelected ? "text-white" : "text-primary")} />;
-    if (node.level === 1) return <MapPin className={cn("h-3 w-3", isSelected ? "text-white" : "text-slate-400")} />;
-    return <Home className={cn("h-3 w-3", isSelected ? "text-white" : "text-slate-400")} />;
+    if (isMunicipality) return <Building2 className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", isSelected ? "text-white" : "text-primary")} />;
+    if (node.level === 1) return <MapPin className={cn("h-3 w-3 shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
+    return <Home className={cn("h-3 w-3 shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
   };
 
   const getLevelLabel = () => {
@@ -84,11 +84,11 @@ function RegionNode({
   };
 
   return (
-    <div className="w-full select-none" title={getLevelLabel()}>
+    <div className="w-full min-w-0 select-none" title={getLevelLabel()}>
       <div
         onClick={() => onSelect(isSelected ? null : node.id)}
         className={cn(
-          "flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1",
+          "flex items-start gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1 w-full min-w-0 box-border",
           isSelected
             ? "bg-primary text-white shadow-md shadow-primary/20"
             : isMunicipality
@@ -104,17 +104,17 @@ function RegionNode({
             setIsOpen(!isOpen);
           }}
           className={cn(
-            "w-4 h-4 flex items-center justify-center rounded transition-colors",
+            "w-4 h-4 flex items-center justify-center rounded transition-colors shrink-0 mt-0.5",
             !isMunicipality && "hover:bg-black/5 dark:hover:bg-white/10"
           )}
         >
           {hasChildren && !isMunicipality && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
-          {isMunicipality && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1" />}
+          {isMunicipality && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1 shrink-0" />}
         </div>
         {getIcon()}
         <span
           className={cn(
-            "text-sm truncate flex-1 tracking-tight",
+            "text-sm break-all whitespace-normal min-w-0 flex-1 tracking-tight leading-snug",
             isMunicipality ? "text-sm font-black uppercase" : "font-semibold",
             isSelected ? "text-white" : "text-slate-700 dark:text-slate-300"
           )}
@@ -245,12 +245,12 @@ export default function CustomerPage() {
     <div className="flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-slate-50 dark:bg-slate-950">
 
       {/* 1. Top Header */}
-      <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
-        <div className="flex items-center gap-8 flex-1">
+      <header className="min-h-20 py-3 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex flex-col lg:flex-row items-stretch lg:items-center justify-between px-4 md:px-8 lg:px-10 shrink-0 z-20 transition-colors gap-4 lg:gap-8">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 md:gap-8 flex-1">
           <Breadcrumbs items={[{ label: "customers" }]} />
 
           {/* Search Box & Tabs Group */}
-          <div className="flex items-center gap-4 flex-1 max-w-4xl">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-4xl">
             {/* Search Input */}
             <div className="relative flex-1 flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
               <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
@@ -288,7 +288,7 @@ export default function CustomerPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0 self-end lg:self-auto">
           <Button
             variant="outline"
             onClick={handleExport}
@@ -308,9 +308,9 @@ export default function CustomerPage() {
 
       {/* 2. Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0 shadow-sm transition-colors">
+        <aside className="relative z-10 w-72 lg:w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0 shadow-sm transition-colors">
           <ScrollArea className="h-full w-full">
-            <div className="p-5 space-y-2">
+            <div className="p-4 lg:p-5 space-y-2">
               <button
                 type="button"
                 onClick={() => setSelectedRegionId(null)}
@@ -341,65 +341,76 @@ export default function CustomerPage() {
           </ScrollArea>
         </aside>
 
-        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors">
-          <div className="p-10">
-            <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <main className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-4 md:p-8 lg:p-10">
+          <div className="max-w-[1920px] w-full mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-              <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
-                <Table className="table-fixed">
+            <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
+              <div className="w-full overflow-x-auto no-scrollbar">
+                <Table className="w-full min-w-[850px] table-auto">
                   <TableHeader className="bg-transparent border-b border-slate-100 dark:border-slate-800 transition-colors">
                     <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="w-[30%] px-10 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Profile & Address</TableHead>
-                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Status</TableHead>
-                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Contact</TableHead>
-                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Region Area</TableHead>
-                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Created At</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Profile</TableHead>
+                      <TableHead className="w-[10%] px-2 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-left">Status</TableHead>
+                      <TableHead className="w-[15%] px-4 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-left">Contact</TableHead>
+                      <TableHead className="w-[33%] px-4 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-left">Region & Address</TableHead>
+                      <TableHead className="w-[12%] px-4 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Created At</TableHead>
                       <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ops</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
-                    {customers.map((c) => (
-                      <TableRow
-                        key={c.id}
-                        onClick={() => router.push(`/customers/${c.id}`)}
-                        className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03] cursor-pointer"
-                      >
-                        <TableCell className="py-5 px-10 align-middle">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-black italic text-slate-900 dark:text-white text-[15px] uppercase tracking-tight leading-none group-hover:text-primary transition-colors">
-                              {(c.first_name || '')} {(c.last_name || '')}
-                            </span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">
-                              ID: {c.uuid}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center align-middle">
-                           {c.is_bound ? (
-                             <Badge className="bg-green-500/10 text-green-500 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase">Bound</Badge>
-                           ) : (
-                             <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-400 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase">Unbound</Badge>
-                           )}
-                        </TableCell>
-                        <TableCell className="text-center align-middle">
-                          <span className="text-[13px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tight">{c.mobile}</span>
-                        </TableCell>
-                        <TableCell className="text-center align-middle">
-                          <div className="flex flex-col items-center gap-1.5 py-1">
-                            {(c.region_name || '').split(/[>|/•,]\s*/).map((part: string, index: number) => (
-                              <Badge
-                                key={index}
-                                className={cn(
-                                  "border-none px-2.5 py-0.5 rounded-md font-black text-[8px] uppercase shadow-sm tracking-tight",
-                                  index === 0 ? "bg-primary/10 text-primary" : "bg-slate-100 dark:bg-white/5 text-slate-500"
-                                )}
-                              >
-                                {part.trim()}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="align-middle px-8 text-right">
+                    {customers.map((c) => {
+                      const fullAddress = [
+                        c.region_name?.replace(/\s*>\s*/g, ' / '),
+                        c.address
+                      ].filter(Boolean).join(' - ');
+
+                      return (
+                        <TableRow
+                          key={c.id}
+                          onClick={() => router.push(`/customers/${c.id}`)}
+                          className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03] cursor-pointer"
+                        >
+                          <TableCell className="py-5 px-8 align-middle">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-black italic text-slate-900 dark:text-white text-[15px] uppercase tracking-tight leading-none group-hover:text-primary transition-colors">
+                                {(c.first_name || '')} {(c.last_name || '')}
+                              </span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">
+                                ID: {c.uuid}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-left px-2 align-middle">
+                             {c.is_bound ? (
+                               <Badge className="bg-green-500/10 text-green-500 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase">Bound</Badge>
+                             ) : (
+                               <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-400 border-none px-2 py-0.5 rounded-md font-black text-[8px] uppercase">Unbound</Badge>
+                             )}
+                          </TableCell>
+                          <TableCell className="text-left px-4 align-middle">
+                            <span className="text-[13px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tight">{c.mobile}</span>
+                          </TableCell>
+                          <TableCell className="text-left px-4 align-middle">
+                            <div className="flex flex-col items-start gap-1 py-1">
+                              {c.region_name && (
+                                <Badge
+                                  className="bg-primary/10 text-primary border-none px-2.5 py-0.5 rounded-md font-black text-[9px] uppercase shadow-sm tracking-tight whitespace-nowrap max-w-[280px] truncate"
+                                  title={c.region_name}
+                                >
+                                  {c.region_name.replace(/\s*>\s*/g, ' / ')}
+                                </Badge>
+                              )}
+                              {c.address && (
+                                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 tracking-tight truncate max-w-[280px]" title={c.address}>
+                                  {c.address}
+                                </span>
+                              )}
+                              {!c.region_name && !c.address && (
+                                <span className="text-[12px] font-bold text-slate-400 dark:text-slate-600">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        <TableCell className="align-middle px-4 text-right">
                           <div className="flex flex-col items-end gap-0.5">
                             <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">
                               {c.created_at?.replace('T', ' ').split(" ")[0]}
@@ -446,9 +457,11 @@ export default function CustomerPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                  })}
                   </TableBody>
                 </Table>
+              </div>
                 {customers.length === 0 && !isListLoading && (
                   <div className="py-16 text-center flex flex-col items-center">
                     <AlertCircle className="w-8 h-8 text-slate-200 dark:text-slate-700 mb-4" />
@@ -533,7 +546,6 @@ export default function CustomerPage() {
                 </div>
               )}
             </div>
-          </div>
         </main>
       </div>
 

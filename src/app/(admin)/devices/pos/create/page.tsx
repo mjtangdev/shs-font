@@ -34,7 +34,7 @@ export default function CreatePOSPage() {
   const [searchUser, setSearchUser] = useState('');
 
   const [formData, setFormData] = useState({
-    pos_sn: '0310740090312319',
+    pos_sn: '',
     assigned_user_id: 0,
     assigned_user_name: ''
   });
@@ -157,7 +157,7 @@ export default function CreatePOSPage() {
                 <div className="relative">
                   <Hash className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" size={20} />
                   <input 
-                    required placeholder="ENTER POS SN..."
+                    required placeholder="e.g. 0310740090312319"
                     className="w-full h-16 pl-14 pr-6 border-2 border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl focus:border-primary focus:bg-white dark:focus:bg-slate-800 outline-none font-bold text-lg transition-all text-slate-900 dark:text-slate-100"
                     value={formData.pos_sn} 
                     onChange={(e) => setFormData({...formData, pos_sn: e.target.value})} 
