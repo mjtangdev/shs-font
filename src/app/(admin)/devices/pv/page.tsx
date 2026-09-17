@@ -1,0 +1,791 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Search, Loader2,
+  Package, CheckCircle2,
+  AlertTriangle, MapPin, FileDown,
+  Sun, Lock, Unlock, Building2, Layers,
+  RefreshCcw, ChevronDown, ChevronRight, ChevronLeft, Home, Users, ArrowUp, Trash2, UserCircle2, RotateCcw
+} from 'lucide-react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import Link from 'next/link';
+import apiClient from '@/lib/axios';
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import Breadcrumbs from '@/components/Breadcrumbs';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+
+const STATUS_MAP: Record<number, { label: string, badgeVariant: string, icon: React.ReactNode }> = {
+  0: {
+    label: 'IN STOCK',
+    badgeVariant: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+    icon: <Package size={12} />
+  },
+  1: {
+    label: 'ACTIVATED',
+    badgeVariant: "bg-primary/10 text-primary border-primary/20",
+    icon: <CheckCircle2 size={12} />
+  },
+  3: {
+    label: 'DAMAGED',
+    badgeVariant: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
+    icon: <AlertTriangle size={12} />
+  }
+};
+
+interface PVPanelRecord {
+  id: number;
+  pv_sn?: string;
+  solar_equipment_id?: string;
+  pv_panel_sn?: string;
+  shs_machine_id?: string;
+  specifications?: string;
+  status: number;
+  customer_id?: number;
+  customer_name?: string;
+  customer_uuid?: string;
+  city_name?: string;
+  town_name?: string;
+  purok_name?: string;
+  purok?: string;
+  region_id?: number;
+  production_date?: string;
+  operator_username?: string;
+  assigned_user_name?: string;
+  region_username?: string;
+  username?: string;
+  operator_name?: string;
+  user_name?: string;
+  operator?: string;
+}
+
+interface UserRecord {
+  id: number;
+  username: string;
+  role: number;
+  region_id?: number;
+  city_name?: string;
+  town_name?: string;
+  purok_name?: string;
+  purok?: string;
+}
+
+interface RegionData {
+  id: number;
+  name: string;
+  level: number;
+  children: RegionData[];
+}
+
+function RegionNode({
+  node,
+  selectedId,
+  onSelect,
+  depth = 0,
+}: {
+  node: RegionData;
+  selectedId: number | null;
+  onSelect: (id: number | null) => void;
+  depth?: number;
+}) {
+  const isMunicipality = node.level === 0;
+  const [isOpen, setIsOpen] = useState(true);
+  const isSelected = selectedId === node.id;
+  const hasChildren = node.children && node.children.length > 0;
+
+  const getIcon = () => {
+    if (isMunicipality) return <Building2 className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", isSelected ? "text-white" : "text-primary")} />;
+    if (node.level === 1) return <MapPin className={cn("h-3 w-3 shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
+    return <Home className={cn("h-3 w-3 shrink-0 mt-0.5", isSelected ? "text-white" : "text-slate-400")} />;
+  };
+
+  return (
+    <div className="w-full min-w-0 select-none">
+      <div
+        onClick={() => onSelect(isSelected ? null : node.id)}
+        className={cn(
+          "flex items-start gap-2 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer group mb-1 w-full min-w-0 box-border",
+          isSelected
+            ? "bg-primary text-white shadow-md shadow-primary/20"
+            : isMunicipality
+              ? "bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+              : "hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400"
+        )}
+        style={{ paddingLeft: `${depth * 16 + 12}px` }}
+      >
+        <div
+          onClick={(e) => {
+            if (isMunicipality) return;
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          className={cn(
+            "w-4 h-4 flex items-center justify-center rounded transition-colors shrink-0 mt-0.5",
+            !isMunicipality && "hover:bg-black/5 dark:hover:bg-white/10"
+          )}
+        >
+          {hasChildren && !isMunicipality && (isOpen ? <ChevronDown className="h-3 w-3 text-slate-400" /> : <ChevronRight className="h-3 w-3 text-slate-400" />)}
+          {isMunicipality && <div className="w-1 h-3.5 bg-primary/20 rounded-full mr-1 shrink-0" />}
+        </div>
+        {getIcon()}
+        <span
+          className={cn(
+            "text-[11px] break-all whitespace-normal min-w-0 flex-1 tracking-tight leading-snug",
+            isMunicipality ? "font-black uppercase" : "font-semibold",
+            isSelected ? "text-white" : "text-slate-700 dark:text-slate-300"
+          )}
+        >
+          {node.name}
+        </span>
+      </div>
+      {hasChildren && (isMunicipality || isOpen) && (
+        <div className="relative my-0.5">
+          {node.children.map((child) => (
+            <RegionNode key={child.id} node={child} selectedId={selectedId} onSelect={onSelect} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function PVPanelPage() {
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setUserRole(localStorage.getItem("user_role"));
+  }, []);
+  const [isListLoading, setIsListLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [panels, setPanels] = useState<PVPanelRecord[]>([]);
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [regions, setRegions] = useState<RegionData[]>([]);
+  const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
+
+  // Custom Confirmation Modal
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    type: 'delete' | 'reset';
+    title: string;
+    description: string;
+    loading: boolean;
+    onConfirm: () => Promise<void>;
+  }>({
+    open: false,
+    type: 'delete',
+    title: '',
+    description: '',
+    loading: false,
+    onConfirm: async () => {},
+  });
+
+  // Back to Top logic
+  const mainRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    setShowScrollTop(scrollTop > 400);
+  };
+
+  const scrollToTop = () => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+
+  const fetchRegions = useCallback(async () => {
+    try {
+      const res = await apiClient.get("/org/regions/tree");
+      const data = res.data ? (Array.isArray(res.data) ? res.data : [res.data]) : [];
+      setRegions(data);
+    } catch {
+      toast.error("Failed to load regions");
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/user/');
+      const data = res.data ? (Array.isArray(res.data) ? res.data : res.data.items || []) : [];
+      setUsers(data);
+    } catch {
+      console.error("Failed to load user list for operator mapping");
+    }
+  }, []);
+
+  const fetchPanels = useCallback(async () => {
+    setIsListLoading(true);
+    try {
+      let res;
+      try {
+        res = await apiClient.get('/solar_device/pv-list', {
+          params: {
+            region_id: selectedRegionId || undefined,
+            search: searchQuery || undefined,
+            status: statusFilter === 'all' ? undefined : statusFilter,
+            skip: (currentPage - 1) * pageSize,
+            limit: pageSize,
+          }
+        });
+      } catch {
+        res = await apiClient.get('/solar_device/', {
+          params: {
+            region_id: selectedRegionId || undefined,
+            search: searchQuery || undefined,
+            status: statusFilter === 'all' ? undefined : statusFilter,
+            skip: (currentPage - 1) * pageSize,
+            limit: pageSize,
+          }
+        });
+      }
+      setPanels(res.data.items || res.data || []);
+      setTotalCount(res.data.total || (Array.isArray(res.data) ? res.data.length : 0));
+    } catch (err) {
+      console.error(err);
+      toast.error("SYSTEM SYNC ERROR: Solar PV registry inaccessible.");
+    } finally {
+      setIsListLoading(false);
+      setLoading(false);
+    }
+  }, [selectedRegionId, statusFilter, searchQuery, currentPage, pageSize]);
+
+  const handleDeleteTrigger = (panelId: number, equipmentId: string) => {
+    setConfirmModal({
+      open: true,
+      type: 'delete',
+      title: 'Remove PV Panel',
+      description: `Are you sure you want to remove PV Panel #${equipmentId} from registry? Idle panels can be safely removed.`,
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await apiClient.delete(`/solar_device/pv/${panelId}`);
+          toast.success("PV Panel removed from assets");
+          setConfirmModal(prev => ({ ...prev, open: false, loading: false }));
+          fetchPanels();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || "Delete failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
+  };
+
+  const handleResetTrigger = (panelId: number, equipmentId: string) => {
+    setConfirmModal({
+      open: true,
+      type: 'reset',
+      title: 'Reset & Unbind PV Panel',
+      description: `Are you sure you want to reset PV Panel #${equipmentId}? This will unbind customer association and restore status to IN STOCK (0).`,
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await apiClient.post(`/solar_device/${panelId}/reset`);
+          toast.success("PV Panel reset successfully");
+          setConfirmModal(prev => ({ ...prev, open: false, loading: false }));
+          fetchPanels();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || "Reset failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (searchQuery) params.append('query', searchQuery);
+      if (selectedRegionId) params.append('region_id', selectedRegionId.toString());
+
+      let response;
+      try {
+        response = await apiClient.get(`/solar_device/pv/export?${params.toString()}`, {
+          responseType: 'blob',
+        });
+      } catch {
+        response = await apiClient.get(`/solar_device/export?${params.toString()}`, {
+          responseType: 'blob',
+        });
+      }
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      const date = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `shs-pv-panel_${date}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success("Export successful");
+    } catch {
+      toast.error("Export failed");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRegions();
+    fetchUsers();
+  }, [fetchRegions, fetchUsers]);
+
+  useEffect(() => { fetchPanels(); }, [fetchPanels]);
+
+  // Handle SSE data refresh
+  useEffect(() => {
+    const handleRefresh = (e: any) => {
+      if (e.detail?.event === 'SOLAR_UNIT_REGISTERED') {
+        fetchPanels();
+      }
+    };
+    window.addEventListener('shs-data-refresh', handleRefresh as EventListener);
+    return () => window.removeEventListener('shs-data-refresh', handleRefresh as EventListener);
+  }, [fetchPanels]);
+
+  // Reset to page 1 when filter, search, or page size changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedRegionId, statusFilter, searchQuery, pageSize]);
+
+  const filteredPanels = panels || [];
+
+  return (
+    <div className="relative flex flex-col h-[calc(100vh-80px)] w-full overflow-hidden font-sans transition-colors duration-500 bg-slate-50 dark:bg-slate-950">
+
+      {/* 1. Top Header */}
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-10 shrink-0 z-20 transition-colors gap-8">
+        <div className="flex items-center gap-8 flex-1">
+          <Breadcrumbs items={[{ label: "PV Solar Panels" }]} />
+          <div className="relative max-w-md w-full flex items-center h-11 px-4 bg-slate-100 dark:bg-slate-800 rounded-xl group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <Search className="text-slate-400 group-focus-within:text-primary transition-colors mr-2 shrink-0" size={14} />
+            <input
+              type="text" placeholder="SEARCH BY EQUIPMENT ID OR S/N..." value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-full bg-transparent border-none text-[10px] font-black uppercase tracking-[0.2em] outline-none text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+            />
+            {isListLoading && <Loader2 className="h-4 w-4 animate-spin text-slate-400 shrink-0" />}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={handleExport} disabled={isExporting} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none dark:border-slate-800 dark:text-slate-300">
+            {isExporting ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <FileDown className="h-4 w-4 mr-2" />} Export
+          </Button>
+          <Button variant="outline" onClick={fetchPanels} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none dark:border-slate-800 dark:text-slate-300">
+            <RefreshCcw className={cn("h-4 w-4 mr-2", isListLoading && "animate-spin")} /> Refresh
+          </Button>
+          <Link href="/devices/pv/create" passHref>
+            <Button asChild className="rounded-xl h-10 px-6 font-bold shadow-sm dark:shadow-none transition-all active:scale-95 uppercase text-[10px] tracking-widest">
+              <span><Sun className="h-4 w-4 mr-2" /> Reg. PV Panel</span>
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* 2. Content Area */}
+      <div className="flex flex-1 overflow-hidden relative">
+        <aside className="relative z-10 w-80 border-r border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl flex flex-col shrink-0 shadow-sm transition-all duration-300">
+          <ScrollArea className="h-full w-full">
+            <div className="p-5 space-y-6">
+              {/* Status Filter Section */}
+              <div className="space-y-2">
+                <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">PV Status Protocol</h3>
+                <button
+                  onClick={() => setStatusFilter('all')}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border",
+                    statusFilter === 'all' ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xl scale-[1.02]" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
+                  )}
+                >
+                  <Layers className="h-4 w-4" /><span>Full Registry</span>
+                </button>
+                {[0, 1, 3].map((sId) => (
+                  <button
+                    key={sId}
+                    onClick={() => setStatusFilter(sId.toString())}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border",
+                      statusFilter === sId.toString() ? "bg-primary text-white border-transparent shadow-lg shadow-primary/20" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50"
+                    )}
+                  >
+                    {STATUS_MAP[sId].icon}
+                    <span>{STATUS_MAP[sId].label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {statusFilter === '1' && (
+                <>
+                  <div className="h-px bg-slate-100 dark:bg-slate-800 mx-4" />
+
+                  {/* Regional Filter Section */}
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Regional Filter</h3>
+                    <button
+                      onClick={() => setSelectedRegionId(null)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-2",
+                        selectedRegionId === null ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400"
+                      )}
+                    >
+                      <Users className="h-4 w-4" /><span>Global View</span>
+                    </button>
+
+                    {regions.map((node) => (
+                      <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </ScrollArea>
+        </aside>
+
+        <main
+          ref={mainRef}
+          onScroll={handleScroll}
+          className="relative z-10 flex-1 overflow-y-auto bg-slate-50/50 dark:bg-transparent transition-colors p-10"
+        >
+          <div className="max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Card className="border-none shadow-sm dark:shadow-none rounded-2xl overflow-hidden bg-white dark:bg-slate-900/60 transition-colors">
+                <Table className="table-fixed">
+                  <TableHeader className="bg-transparent border-b border-slate-100 dark:border-slate-800 transition-colors">
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableHead className="w-[5%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">#</TableHead>
+                      <TableHead className="w-[35%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">PV Panel Identity & Specs</TableHead>
+                      <TableHead className="w-[20%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Deployment</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-center">Status</TableHead>
+                      <TableHead className="w-[15%] px-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle text-right">Production Date</TableHead>
+                      <TableHead className="w-[10%] text-right pr-8 py-4 font-black text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] leading-none align-middle">Ops</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-100 dark:divide-white/5">
+                    {loading ? (
+                       <TableRow>
+                          <TableCell colSpan={6} className="h-[400px] text-center">
+                              <div className="flex flex-col items-center justify-center gap-4 text-slate-300 italic">
+                                <Loader2 className="animate-spin text-primary" size={40} />
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Syncing PV Registry...</span>
+                              </div>
+                          </TableCell>
+                       </TableRow>
+                    ) : filteredPanels.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-[400px] text-center opacity-30">
+                              <div className="flex flex-col items-center justify-center gap-4">
+                                <Sun size={48} strokeWidth={1} className="dark:text-slate-400" />
+                                <span className="text-[11px] font-black uppercase tracking-[0.4em] dark:text-slate-400">No PV Panels Found</span>
+                              </div>
+                          </TableCell>
+                        </TableRow>
+                    ) : filteredPanels.map((panel, idx) => {
+                      const getOperatorUsername = (): string | null => {
+                        if (panel.operator_username) return panel.operator_username;
+                        if (panel.assigned_user_name) return panel.assigned_user_name;
+                        if (panel.region_username) return panel.region_username;
+                        if (panel.username) return panel.username;
+                        if (panel.operator_name) return panel.operator_name;
+                        if (panel.user_name) return panel.user_name;
+                        if (panel.operator) return panel.operator;
+
+                        if (users.length > 0) {
+                          if (panel.region_id) {
+                            const byRegion = users.find(u => u.role === 2 && u.region_id === panel.region_id);
+                            if (byRegion?.username) return byRegion.username;
+                          }
+                          const devicePurok = (panel.purok_name || panel.purok || panel.town_name || '').trim().toLowerCase();
+                          if (devicePurok) {
+                            const byPurok = users.find(u => {
+                              if (u.role !== 2) return false;
+                              const userPurok = (u.purok_name || u.purok || u.town_name || '').trim().toLowerCase();
+                              return userPurok === devicePurok;
+                            });
+                            if (byPurok?.username) return byPurok.username;
+                          }
+                        }
+                        return null;
+                      };
+
+                      const opUsername = getOperatorUsername();
+
+                      return (
+                      <TableRow key={panel.id || idx} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
+                        <TableCell className="py-8 px-8 text-center align-middle font-black italic text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                          {(currentPage - 1) * pageSize + idx + 1}
+                        </TableCell>
+                        <TableCell className="py-8 px-8 align-middle">
+                          <div className="flex items-start gap-6">
+                              <div className={cn(
+                                  "w-12 h-12 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 shadow-sm",
+                                  panel.status === 1 ? "border-primary/20 bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-400"
+                              )}>
+                                  <Sun size={22} />
+                              </div>
+
+                              <div className="flex flex-col space-y-2">
+                                  <div className="bg-slate-900 dark:bg-slate-800 text-white px-3 py-1.5 rounded-lg inline-flex flex-col w-fit min-w-0 shadow-md dark:shadow-none border border-white/5">
+                                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Solar Equipment ID / S/N</span>
+                                      <span className="font-mono text-sm font-black italic tracking-wider">{panel.pv_sn || panel.solar_equipment_id || panel.pv_panel_sn || `PV-${panel.id}`}</span>
+                                  </div>
+
+                                  {panel.shs_machine_id && (
+                                    <div className="flex items-center gap-2 pl-1">
+                                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Master Box S/N:</span>
+                                      <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300">{panel.shs_machine_id}</span>
+                                    </div>
+                                  )}
+                              </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle text-center">
+                          <div className="inline-flex flex-col gap-2 items-center">
+                            {panel.customer_id ? (
+                                <Link
+                                  href={`/customers/${panel.customer_id}`}
+                                  className="group/cust flex flex-col items-center gap-1 hover:opacity-80 transition-opacity"
+                                >
+                                    <div className="flex items-center gap-2 text-[11px] font-black uppercase italic text-slate-900 dark:text-white group-hover/cust:text-primary transition-colors">
+                                       <Building2 size={13} className="text-primary" />
+                                       {panel.customer_name || 'Assigned Customer'}
+                                    </div>
+                                    {panel.customer_uuid && (
+                                      <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover/cust:text-primary/70 transition-colors">
+                                          ID: {panel.customer_uuid}
+                                      </span>
+                                    )}
+                                </Link>
+                            ) : (
+                                <div className="flex items-center gap-2 text-[11px] font-black uppercase italic text-slate-300 dark:text-slate-700">
+                                   <Building2 size={13} />
+                                   Unassigned
+                                </div>
+                            )}
+                            <div className="flex flex-col items-center gap-1 mt-1">
+                               {panel.city_name && (
+                                 <div className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[9px] text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase">
+                                    {panel.city_name}
+                                 </div>
+                               )}
+                               {panel.town_name && (
+                                 <div className="text-[8px] font-black uppercase text-slate-400 dark:text-slate-600 tracking-tighter italic">
+                                    {panel.town_name}
+                                 </div>
+                               )}
+                               {opUsername && (
+                                 <div className="inline-flex items-center gap-1 text-[9px] font-black text-primary tracking-widest uppercase font-mono mt-1 bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                                   <UserCircle2 size={10} />
+                                   @{opUsername}
+                                 </div>
+                               )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle text-center">
+                          <div className="flex flex-col items-center gap-2">
+                             <Badge className={cn("px-4 py-1.5 rounded-full font-black text-[9px] uppercase border-none shadow-sm", STATUS_MAP[panel.status]?.badgeVariant)}>
+                                {STATUS_MAP[panel.status]?.label || 'IN STOCK'}
+                             </Badge>
+                             <div className={cn(
+                                "flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.1em]",
+                                panel.status === 1 ? "text-green-600 dark:text-green-400" : "text-slate-400"
+                             )}>
+                                {panel.status === 1 ? <Unlock size={10} strokeWidth={3} /> : <Lock size={10} strokeWidth={3} />}
+                                {panel.status === 1 ? "Active Protocol" : "Standby/Locked"}
+                             </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-8 align-middle text-right font-mono text-[10px] font-black text-slate-400 italic">
+                          {panel.production_date?.split(' ')[0] || '-'}
+                        </TableCell>
+                        <TableCell className="py-8 px-8 pr-8 text-right align-middle">
+                          <div className="flex items-center justify-end gap-2">
+                              <Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9"><MapPin size={16} /></Button>
+                              {(userRole === "1" || userRole === "3") && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleResetTrigger(panel.id, panel.pv_sn || panel.solar_equipment_id || '')}
+                                  className="text-slate-300 dark:text-slate-600 hover:text-amber-500 rounded-lg h-9 w-9"
+                                  title="Reset / Unbind PV Panel"
+                                >
+                                  <RotateCcw size={16} />
+                                </Button>
+                              )}
+                              {(userRole === "1" || userRole === "3") && panel.status !== 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteTrigger(panel.id, panel.pv_sn || panel.solar_equipment_id || '')}
+                                  className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"
+                                  title="Delete PV Panel"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+            </Card>
+
+            {/* Pagination Controls */}
+            {totalCount > 0 && (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 py-8 border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-center gap-6">
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest whitespace-nowrap">
+                    Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+                  </p>
+
+                  {/* Page Size Selector */}
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-white/5">
+                    {[20, 50, 100].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => setPageSize(size)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-[9px] font-black uppercase transition-all",
+                          pageSize === size
+                            ? "bg-white dark:bg-slate-800 text-primary shadow-sm"
+                            : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {totalCount > pageSize && (
+                  <Pagination className="w-auto mx-0">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage > 1) setCurrentPage(currentPage - 1); }}
+                          className={cn(currentPage === 1 && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }).map((_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              href="#"
+                              isActive={currentPage === pageNum}
+                              onClick={(e) => { e.preventDefault(); setCurrentPage(pageNum); }}
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      {Math.ceil(totalCount / pageSize) > 5 && (
+                        <PaginationItem>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      )}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); if(currentPage < Math.ceil(totalCount / pageSize)) setCurrentPage(currentPage + 1); }}
+                          className={cn(currentPage === Math.ceil(totalCount / pageSize) && "pointer-events-none opacity-50")}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Back to Top Button */}
+          {showScrollTop && (
+            <button
+              onClick={scrollToTop}
+              className="fixed bottom-10 right-10 z-50 w-12 h-12 rounded-2xl bg-primary/20 backdrop-blur-md text-primary border border-primary/20 shadow-xl flex items-center justify-center hover:bg-primary hover:text-slate-950 hover:scale-110 active:scale-95 transition-all animate-in fade-in zoom-in duration-300 group opacity-60 hover:opacity-100"
+            >
+              <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform" />
+            </button>
+          )}
+        </main>
+      </div>
+
+      {/* Custom Confirmation Modal */}
+      <Dialog open={confirmModal.open} onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-[420px] p-8 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900 text-center">
+          <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            {confirmModal.type === 'delete' ? <Trash2 size={32} /> : <RotateCcw size={32} className="text-amber-500" />}
+          </div>
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-2xl font-black italic uppercase text-slate-900 dark:text-white text-center">
+              {confirmModal.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-bold text-slate-400 leading-relaxed text-center">
+              {confirmModal.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-3 pt-6">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+              className="flex-1 h-12 rounded-2xl font-black uppercase text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={confirmModal.loading}
+              onClick={confirmModal.onConfirm}
+              className={cn(
+                "flex-1 h-12 text-white rounded-2xl font-black uppercase text-xs shadow-lg",
+                confirmModal.type === 'delete' ? "bg-red-500 hover:bg-red-600 shadow-red-500/20" : "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20"
+              )}
+            >
+              {confirmModal.loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : confirmModal.type === 'delete' ? "Confirm Delete" : "Confirm Reset"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

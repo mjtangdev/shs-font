@@ -4,7 +4,7 @@ import React, { useEffect, useRef, createContext, useContext, useState } from 'r
 import { toast } from 'sonner';
 import { Zap, CreditCard, Cpu, Wallet, RefreshCw, Bell, CloudUpload } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
+import { API_BASE_URL } from '@/lib/config';
 
 interface SSEEvent {
   event: 'CARD_REGISTERED' | 'SOLAR_UNIT_REGISTERED' | 'POS_REGISTERED' | 'POS_RECHARGE_UPLOADED' | 'POS_DATA_SYNCED';

@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, Search, Loader2, ArrowUp,
-  Package, CheckCircle2,
+  Package, CheckCircle2, ShieldAlert,
   AlertTriangle, MapPin, FileDown,
   RefreshCcw, CreditCard,
-  ChevronDown, ChevronRight, ChevronLeft, Home, Users, Pencil, Trash2
+  ChevronDown, ChevronRight, ChevronLeft, Home, Users, Pencil, Trash2, Building2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -30,6 +30,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const STATUS_MAP: Record<number, { label: string, badgeVariant: string, icon: React.ReactNode }> = {
   0: { 
@@ -41,6 +48,11 @@ const STATUS_MAP: Record<number, { label: string, badgeVariant: string, icon: Re
     label: 'ACTIVATED', 
     badgeVariant: "bg-primary/10 text-primary border-primary/20",
     icon: <CheckCircle2 size={12} /> 
+  },
+  2: {
+    label: 'LOST',
+    badgeVariant: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    icon: <ShieldAlert size={12} />
   },
   3: { 
     label: 'DAMAGED', 
@@ -142,11 +154,6 @@ function RegionNode({
   );
 }
 
-// Fixed recursive onSelect call
-const setSelectedId = (id: number | null) => {}; // This was missing in the template, but handled via closure in Solar page
-
-import { Building2 } from 'lucide-react';
-
 export default function CardsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -220,7 +227,7 @@ export default function CardsPage() {
     try {
       const params = new URLSearchParams();
       if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (searchQuery) params.append('query', searchQuery);
+      if (searchQuery) params.append('search', searchQuery);
       if (selectedRegionId) params.append('region_id', selectedRegionId.toString());
 
       const response = await apiClient.get(`/card/export?${params.toString()}`, {
@@ -236,7 +243,7 @@ export default function CardsPage() {
       link.click();
       link.remove();
       toast.success("Export successful");
-    } catch (err) {
+    } catch {
       toast.error("Export failed");
     } finally {
       setIsExporting(false);
@@ -262,15 +269,40 @@ export default function CardsPage() {
     setCurrentPage(1);
   }, [selectedRegionId, statusFilter, searchQuery, pageSize]);
 
-  const handleDelete = async (cardId: number, cardNo: string) => {
-    if (!confirm(`Are you sure you want to remove card #${cardNo}?`)) return;
-    try {
-      await apiClient.delete(`/card/${cardId}`);
-      toast.success("Card removed from registry");
-      fetchCards();
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Delete failed. Active cards cannot be removed.");
-    }
+  // Custom Confirmation Modal
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    loading: boolean;
+    onConfirm: () => Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    loading: false,
+    onConfirm: async () => {},
+  });
+
+  const handleDeleteTrigger = (cardId: number, cardNo: string) => {
+    setConfirmModal({
+      open: true,
+      title: 'Remove IC Card',
+      description: `Are you sure you want to remove IC Card #${cardNo} from the registry? Idle cards can be safely removed.`,
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await apiClient.delete(`/card/${cardId}`);
+          toast.success("Card removed from registry");
+          setConfirmModal(prev => ({ ...prev, open: false, loading: false }));
+          fetchCards();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || "Delete failed. Active cards cannot be removed.");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const filteredCards = cards || [];
@@ -334,9 +366,9 @@ export default function CardsPage() {
                 <div className="space-y-2">
                   <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Status Filter</h3>
                   <button onClick={() => setStatusFilter('all')} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all mb-4 text-sm font-bold border", statusFilter === 'all' ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white shadow-xl scale-[1.02]" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50")}><CreditCard className="h-4 w-4" /><span>Full Registry</span></button>
-                  {[0, 1, 3].map((sId) => (
+                  {[0, 1, 2, 3].map((sId) => (
                     <button key={sId} onClick={() => setStatusFilter(sId.toString())} className={cn("w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-1", statusFilter === sId.toString() ? "bg-primary text-white border-transparent" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400 dark:hover:bg-slate-800/50")}>
-                      {STATUS_MAP[sId].label}
+                      {STATUS_MAP[sId]?.label}
                     </button>
                   ))}
                 </div>
@@ -367,8 +399,10 @@ export default function CardsPage() {
           ) : (
             <div className="flex flex-col items-center pt-10 gap-6">
               <CreditCard className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === 'all' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('all'); setIsSidebarCollapsed(false);}} size={20} />
-              <CheckCircle2 className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === '1' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('1'); setIsSidebarCollapsed(false);}} size={20} />
               <Package className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === '0' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('0'); setIsSidebarCollapsed(false);}} size={20} />
+              <CheckCircle2 className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === '1' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('1'); setIsSidebarCollapsed(false);}} size={20} />
+              <ShieldAlert className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === '2' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('2'); setIsSidebarCollapsed(false);}} size={20} />
+              <AlertTriangle className={cn("cursor-pointer hover:text-primary transition-colors", statusFilter === '3' ? "text-primary" : "text-slate-400")} onClick={() => {setStatusFilter('3'); setIsSidebarCollapsed(false);}} size={20} />
               {statusFilter === '1' && (
                 <MapPin className={cn("cursor-pointer hover:text-primary transition-colors animate-in zoom-in duration-300", selectedRegionId !== null ? "text-primary" : "text-slate-400")} onClick={() => setIsSidebarCollapsed(false)} size={20} />
               )}
@@ -457,7 +491,10 @@ export default function CardsPage() {
                         </TableCell>
                         <TableCell className="py-7 px-8 text-center align-middle">
                           <div className={cn("inline-flex p-3 rounded-xl border transition-all",
-                             card.status === 1 ? "bg-primary/5 border-primary/20 text-primary" : "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 text-slate-400")}>
+                             card.status === 1 ? "bg-primary/5 border-primary/20 text-primary" :
+                             card.status === 2 ? "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400" :
+                             card.status === 3 ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400" :
+                             "bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 text-slate-400")}>
                             {STATUS_MAP[card.status]?.icon || <CreditCard size={18} />}
                           </div>
                         </TableCell>
@@ -476,7 +513,7 @@ export default function CardsPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDelete(card.id, card.card_number)}
+                                onClick={() => handleDeleteTrigger(card.id, card.card_number)}
                                 className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"
                                 title="Delete Card"
                               >
@@ -487,16 +524,6 @@ export default function CardsPage() {
                         </TableCell>
                       </TableRow>
                     ))}
-                    {!loading && filteredCards.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="py-32 text-center">
-                          <div className="flex flex-col items-center gap-4 opacity-20">
-                            <Package size={48} strokeWidth={1} />
-                            <span className="text-[11px] font-black uppercase tracking-[0.4em]">No Inventory Matched</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
             </Card>
@@ -585,6 +612,42 @@ export default function CardsPage() {
           )}
         </main>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <Dialog open={confirmModal.open} onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-[420px] p-8 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900 text-center">
+          <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Trash2 size={32} />
+          </div>
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-2xl font-black italic uppercase text-slate-900 dark:text-white text-center">
+              {confirmModal.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-bold text-slate-400 leading-relaxed text-center">
+              {confirmModal.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-3 pt-6">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+              className="flex-1 h-12 rounded-2xl font-black uppercase text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={confirmModal.loading}
+              onClick={confirmModal.onConfirm}
+              className="flex-1 h-12 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black uppercase text-xs shadow-lg shadow-red-500/20"
+            >
+              {confirmModal.loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : "Confirm Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

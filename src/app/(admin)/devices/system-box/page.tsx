@@ -6,7 +6,7 @@ import {
   Package, CheckCircle2,
   AlertTriangle, MapPin, FileDown,
   Zap, Lock, Unlock, Building2, Layers,
-  RefreshCcw, ChevronDown, ChevronRight, ChevronLeft, Home, Users, ArrowUp, Trash2
+  RefreshCcw, ChevronDown, ChevronRight, ChevronLeft, Home, Users, ArrowUp, Trash2, UserCircle2, RotateCcw, Eye
 } from 'lucide-react';
 import {
   Pagination,
@@ -18,6 +18,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import apiClient from '@/lib/axios';
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const STATUS_MAP: Record<number, { label: string, badgeVariant: string, icon: React.ReactNode }> = {
   0: { 
@@ -61,7 +69,28 @@ interface SolarDeviceRecord {
   customer_uuid?: string;
   city_name: string;
   town_name: string;
+  purok_name?: string;
+  purok?: string;
+  region_id?: number;
   production_date: string;
+  operator_username?: string;
+  assigned_user_name?: string;
+  region_username?: string;
+  username?: string;
+  operator_name?: string;
+  user_name?: string;
+  operator?: string;
+}
+
+interface UserRecord {
+  id: number;
+  username: string;
+  role: number;
+  region_id?: number;
+  city_name?: string;
+  town_name?: string;
+  purok_name?: string;
+  purok?: string;
 }
 
 interface RegionData {
@@ -144,6 +173,7 @@ function RegionNode({
 }
 
 export default function SolarUnitPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -153,10 +183,28 @@ export default function SolarUnitPage() {
   const [isListLoading, setIsListLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [units, setUnits] = useState<SolarDeviceRecord[]>([]);
+  const [users, setUsers] = useState<UserRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [selectedRegionId, setSelectedRegionId] = useState<number | null>(null);
+
+  // Custom Confirmation Modal
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    type: 'delete' | 'reset';
+    title: string;
+    description: string;
+    loading: boolean;
+    onConfirm: () => Promise<void>;
+  }>({
+    open: false,
+    type: 'delete',
+    title: '',
+    description: '',
+    loading: false,
+    onConfirm: async () => {},
+  });
 
   // Back to Top logic
   const mainRef = React.useRef<HTMLDivElement>(null);
@@ -186,6 +234,16 @@ export default function SolarUnitPage() {
     }
   }, []);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/user/');
+      const data = res.data ? (Array.isArray(res.data) ? res.data : res.data.items || []) : [];
+      setUsers(data);
+    } catch {
+      console.error("Failed to load user list for operator mapping");
+    }
+  }, []);
+
   const fetchUnits = useCallback(async () => {
     setIsListLoading(true);
     try {
@@ -209,15 +267,48 @@ export default function SolarUnitPage() {
     }
   }, [selectedRegionId, statusFilter, searchQuery, currentPage, pageSize]);
 
-  const handleDelete = async (unitId: number, machineId: string) => {
-    if (!confirm(`Are you sure you want to remove Machine #${machineId} from registry?`)) return;
-    try {
-      await apiClient.delete(`/solar_device/${unitId}`);
-      toast.success("Device removed from assets");
-      fetchUnits();
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Delete failed. Active devices cannot be removed.");
-    }
+  const handleDeleteTrigger = (unitId: number, machineId: string) => {
+    setConfirmModal({
+      open: true,
+      type: 'delete',
+      title: 'Remove System Box',
+      description: `Are you sure you want to remove Machine #${machineId} from the registry? Idle devices can be safely removed.`,
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await apiClient.delete(`/solar_device/${unitId}`);
+          toast.success("Device removed from assets");
+          setConfirmModal(prev => ({ ...prev, open: false, loading: false }));
+          fetchUnits();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || "Delete failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
+  };
+
+  const handleResetTrigger = (unitId: number, machineId: string) => {
+    setConfirmModal({
+      open: true,
+      type: 'reset',
+      title: 'Reset & Unbind Device',
+      description: `Are you sure you want to reset device #${machineId}? This will unbind customer association and restore status to IN STOCK (0).`,
+      loading: false,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, loading: true }));
+        try {
+          await apiClient.post(`/solar_device/${unitId}/reset`);
+          toast.success("Device reset successfully");
+          setConfirmModal(prev => ({ ...prev, open: false, loading: false }));
+          fetchUnits();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || "Reset failed");
+          setConfirmModal(prev => ({ ...prev, loading: false }));
+        }
+      }
+    });
   };
 
   const handleExport = async () => {
@@ -240,14 +331,18 @@ export default function SolarUnitPage() {
       link.click();
       link.remove();
       toast.success("Export successful");
-    } catch (err) {
+    } catch {
       toast.error("Export failed");
     } finally {
       setIsExporting(false);
     }
   };
 
-  useEffect(() => { fetchRegions(); }, [fetchRegions]);
+  useEffect(() => {
+    fetchRegions();
+    fetchUsers();
+  }, [fetchRegions, fetchUsers]);
+
   useEffect(() => { fetchUnits(); }, [fetchUnits]);
 
   // Handle SSE data refresh
@@ -265,14 +360,6 @@ export default function SolarUnitPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedRegionId, statusFilter, searchQuery, pageSize]);
-
-  // Handle Dev Alert
-  const handleDevAlert = () => {
-    toast.info("Feature in development", {
-      description: "Module undergoing calibration. Please wait for the next update.",
-      className: "font-bold text-[12px] tracking-tight",
-    });
-  };
 
   const filteredUnits = units || [];
 
@@ -301,7 +388,7 @@ export default function SolarUnitPage() {
           <Button variant="outline" onClick={fetchUnits} className="rounded-xl h-10 px-5 font-bold uppercase text-[10px] tracking-widest shadow-sm dark:shadow-none dark:border-slate-800 dark:text-slate-300">
             <RefreshCcw className={cn("h-4 w-4 mr-2", isListLoading && "animate-spin")} /> Refresh
           </Button>
-          <Link href="/devices/solar/create" passHref>
+          <Link href="/devices/system-box/create" passHref>
             <Button asChild className="rounded-xl h-10 px-6 font-bold shadow-sm dark:shadow-none transition-all active:scale-95 uppercase text-[10px] tracking-widest">
               <span><Zap className="h-4 w-4 mr-2" /> Reg. Unit</span>
             </Button>
@@ -405,24 +492,46 @@ export default function SolarUnitPage() {
                               </div>
                           </TableCell>
                         </TableRow>
-                    ) : filteredUnits.map((unit, idx) => (
+                    ) : filteredUnits.map((unit, idx) => {
+                      const getOperatorUsername = (): string | null => {
+                        if (unit.operator_username) return unit.operator_username;
+                        if (unit.assigned_user_name) return unit.assigned_user_name;
+                        if (unit.region_username) return unit.region_username;
+                        if (unit.username) return unit.username;
+                        if (unit.operator_name) return unit.operator_name;
+                        if (unit.user_name) return unit.user_name;
+                        if (unit.operator) return unit.operator;
+
+                        if (users.length > 0) {
+                          if (unit.region_id) {
+                            const byRegion = users.find(u => u.role === 2 && u.region_id === unit.region_id);
+                            if (byRegion?.username) return byRegion.username;
+                          }
+                          const devicePurok = (unit.purok_name || unit.purok || unit.town_name || '').trim().toLowerCase();
+                          if (devicePurok) {
+                            const byPurok = users.find(u => {
+                              if (u.role !== 2) return false;
+                              const userPurok = (u.purok_name || u.purok || u.town_name || '').trim().toLowerCase();
+                              return userPurok === devicePurok;
+                            });
+                            if (byPurok?.username) return byPurok.username;
+                          }
+                        }
+                        return null;
+                      };
+
+                      const opUsername = getOperatorUsername();
+
+                      return (
                       <TableRow key={unit.id} className="group hover:bg-slate-100/80 dark:hover:bg-white/[0.08] transition-colors border-none even:bg-slate-50 dark:even:bg-white/[0.03]">
                         <TableCell className="py-8 px-8 text-center align-middle font-black italic text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
                           {(currentPage - 1) * pageSize + idx + 1}
                         </TableCell>
                         <TableCell className="py-8 px-8 align-middle">
-                          <div className="flex items-start gap-6">
-                              <div className={cn(
-                                  "w-12 h-12 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 shadow-sm",
-                                  unit.status === 1 ? "border-primary/20 bg-primary/5 text-primary" : "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-400"
-                              )}>
-                                  <Layers size={22} />
-                              </div>
-
-                              <div className="flex flex-col space-y-4">
-                                  <div className="bg-slate-900 dark:bg-slate-800 text-white px-4 py-2 rounded-lg inline-flex flex-col min-w-[220px] shadow-lg dark:shadow-none border border-white/5">
+                          <div className="flex flex-col space-y-4">
+                                  <div className="bg-slate-900 dark:bg-slate-800 text-white px-3 py-1.5 rounded-lg inline-flex flex-col w-fit min-w-0 shadow-md dark:shadow-none border border-white/5">
                                       <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.2em]">Master Machine ID</span>
-                                      <span className="font-mono text-base font-black italic tracking-wider">{unit.shs_machine_id}</span>
+                                      <span className="font-mono text-sm font-black italic tracking-wider">{unit.shs_machine_id}</span>
                                   </div>
 
                                   <div className="relative pl-2 space-y-2">
@@ -443,7 +552,6 @@ export default function SolarUnitPage() {
                                       ))}
                                   </div>
                               </div>
-                          </div>
                         </TableCell>
                         <TableCell className="px-8 align-middle text-center">
                           <div className="inline-flex flex-col gap-2 items-center">
@@ -473,6 +581,12 @@ export default function SolarUnitPage() {
                                <div className="text-[8px] font-black uppercase text-slate-400 dark:text-slate-600 tracking-tighter italic">
                                   {unit.town_name}
                                </div>
+                               {opUsername && (
+                                 <div className="inline-flex items-center gap-1 text-[9px] font-black text-primary tracking-widest uppercase font-mono mt-1 bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                                   <UserCircle2 size={10} />
+                                   @{opUsername}
+                                 </div>
+                               )}
                             </div>
                           </div>
                         </TableCell>
@@ -495,12 +609,31 @@ export default function SolarUnitPage() {
                         </TableCell>
                         <TableCell className="py-8 px-8 pr-8 text-right align-middle">
                           <div className="flex items-center justify-end gap-2">
-                              <Button variant="ghost" size="icon" className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9"><MapPin size={16} /></Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => router.push(`/devices/system-box/${unit.id}`)}
+                                className="text-slate-300 dark:text-slate-600 hover:text-primary rounded-lg h-9 w-9"
+                                title="View Details & Bind PV"
+                              >
+                                <Eye size={16} />
+                              </Button>
+                              {(userRole === "1" || userRole === "3") && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleResetTrigger(unit.id, unit.shs_machine_id)}
+                                  className="text-slate-300 dark:text-slate-600 hover:text-amber-500 rounded-lg h-9 w-9"
+                                  title="Reset / Unbind Device"
+                                >
+                                  <RotateCcw size={16} />
+                                </Button>
+                              )}
                               {(userRole === "1" || userRole === "3") && unit.status !== 1 && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => handleDelete(unit.id, unit.shs_machine_id)}
+                                  onClick={() => handleDeleteTrigger(unit.id, unit.shs_machine_id)}
                                   className="text-slate-300 dark:text-slate-600 hover:text-red-500 rounded-lg h-9 w-9"
                                   title="Delete Asset"
                                 >
@@ -510,7 +643,8 @@ export default function SolarUnitPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
             </Card>
@@ -599,6 +733,45 @@ export default function SolarUnitPage() {
           )}
         </main>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <Dialog open={confirmModal.open} onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}>
+        <DialogContent className="max-w-[420px] p-8 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900 text-center">
+          <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            {confirmModal.type === 'delete' ? <Trash2 size={32} /> : <RotateCcw size={32} className="text-amber-500" />}
+          </div>
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-2xl font-black italic uppercase text-slate-900 dark:text-white text-center">
+              {confirmModal.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-bold text-slate-400 leading-relaxed text-center">
+              {confirmModal.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-3 pt-6">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+              className="flex-1 h-12 rounded-2xl font-black uppercase text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={confirmModal.loading}
+              onClick={confirmModal.onConfirm}
+              className={cn(
+                "flex-1 h-12 text-white rounded-2xl font-black uppercase text-xs shadow-lg",
+                confirmModal.type === 'delete' ? "bg-red-500 hover:bg-red-600 shadow-red-500/20" : "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20"
+              )}
+            >
+              {confirmModal.loading ? <Loader2 className="animate-spin mx-auto" size={18} /> : confirmModal.type === 'delete' ? "Confirm Delete" : "Confirm Reset"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -41,7 +41,7 @@ export function NotificationCenter() {
         router.push('/devices/card');
         break;
       case 'SOLAR_UNIT_REGISTERED':
-        router.push('/devices/solar');
+        router.push('/devices/system-box');
         break;
       case 'POS_REGISTERED':
         router.push('/devices/pos');

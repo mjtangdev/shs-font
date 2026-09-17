@@ -712,6 +712,7 @@ export default function CustomerProfilePage() {
                               <TableRow className="hover:bg-transparent border-none">
                                 <TableHead className="px-8 font-black text-[8px] uppercase tracking-widest text-slate-400 text-right">Date/Time</TableHead>
                                 <TableHead className="font-black text-[8px] uppercase tracking-widest text-slate-400">Action</TableHead>
+                                <TableHead className="font-black text-[8px] uppercase tracking-widest text-slate-400">Operator</TableHead>
                                 <TableHead className="font-black text-[8px] uppercase tracking-widest text-slate-400">Amount</TableHead>
                                 <TableHead className="font-black text-[8px] uppercase tracking-widest text-slate-400 text-right pr-8">Days</TableHead>
                               </TableRow>
@@ -734,13 +735,16 @@ export default function CustomerProfilePage() {
                                         {tx.action_type === 'RECHARGE' ? 'LOAD' : tx.action_type}
                                       </Badge>
                                     </TableCell>
+                                    <TableCell className="font-mono text-[11px] font-bold text-slate-600 dark:text-slate-400 italic">
+                                      @{tx.operator_username || 'system'}
+                                    </TableCell>
                                     <TableCell className="font-black text-slate-900 dark:text-slate-100 italic">₱{Number(tx.amount || 0).toFixed(2)}</TableCell>
                                     <TableCell className="text-right pr-8 font-bold text-slate-500 dark:text-slate-400">{tx.days}D</TableCell>
                                   </TableRow>
                                 ))
                               ) : (
                                 <TableRow>
-                                  <TableCell colSpan={4} className="h-32 text-center italic text-slate-300 dark:text-slate-700 uppercase font-black text-[10px] tracking-widest">No transaction records found</TableCell>
+                                  <TableCell colSpan={5} className="h-32 text-center italic text-slate-300 dark:text-slate-700 uppercase font-black text-[10px] tracking-widest">No transaction records found</TableCell>
                                 </TableRow>
                               )}
                             </TableBody>

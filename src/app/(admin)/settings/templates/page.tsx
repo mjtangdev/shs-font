@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import {
   Download, Loader2,
-  UserPlus, CreditCard, Tablet, Info
+  UserPlus, CreditCard, Tablet, Info, Sun
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -40,6 +40,16 @@ const TEMPLATES = [
     fields: [
       "shs_machine_id", "solar_equipment_id", "radio_id",
       "flashlight_id", "led_light_id", "production_date"
+    ]
+  },
+  {
+    title: "Solar Panel (PV) Manifest Template",
+    description: "Inventory manifest for bulk importing Photovoltaic (PV) Solar Panel hardware components.",
+    endpoint: "/solar_device/import-pv-template",
+    filename: "SHS_PV_Panel_Import_Template.xlsx",
+    icon: Sun,
+    fields: [
+      "solar_equipment_id", "production_date"
     ]
   }
 ];
