@@ -6,7 +6,7 @@ export NODE_OPTIONS=--max-old-space-size=8192
 # 所有环境配置列表 / Server URLs
 # ==============================================================================
 # 当前选中的 key（直接更改此处，或者在执行脚本时传入参数，如: ./build-latest.sh dev-82）
-ACTIVE_ENV="${1:-ppalma}"
+ACTIVE_ENV="${1:-prod}"
 
 # 环境 URL 映射
 get_server_url() {
