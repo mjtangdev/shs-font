@@ -60,6 +60,15 @@ export default function SolarDeviceDetailPage() {
   const [device, setDevice] = useState<SolarDeviceDetail | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
 
+  // PV Binding Modal state
+  const [bindModalOpen, setPvModalOpen] = useState(false);
+  const [pvSnInput, setPvSnInput] = useState('');
+  const [selectedPvSn, setSelectedPvSn] = useState<string | null>(null);
+  const [pvPanels, setPvPanels] = useState<any[]>([]);
+  const [loadingPv, setLoadingPv] = useState(false);
+  const [isPvDropdownOpen, setIsPvDropdownOpen] = useState(false);
+  const [bindingLoading, setBindingLoading] = useState(false);
+
   useEffect(() => {
     setUserRole(localStorage.getItem("user_role"));
   }, []);
@@ -74,6 +83,10 @@ export default function SolarDeviceDetailPage() {
 
       if (found) {
         setDevice(found);
+        if (found.solar_equipment_id) {
+          setPvSnInput(found.solar_equipment_id);
+          setSelectedPvSn(found.solar_equipment_id);
+        }
       } else {
         toast.error("System Box not found");
         router.push('/devices/system-box');
@@ -84,6 +97,46 @@ export default function SolarDeviceDetailPage() {
       setLoading(false);
     }
   }, [unitId, router]);
+
+  useEffect(() => {
+    fetchDeviceDetail();
+  }, [fetchDeviceDetail]);
+
+  const fetchAvailablePvPanels = async (query: string = '') => {
+    setLoadingPv(true);
+    try {
+      const res = await apiClient.get('/solar_device/pv-list', {
+        params: { status: 0, search: query.trim() || undefined, limit: 30 }
+      });
+      setPvPanels(res.data.items || res.data || []);
+    } catch {
+      // fallback
+    } finally {
+      setLoadingPv(false);
+    }
+  };
+
+  const handleBindPv = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!selectedPvSn || pvSnInput.trim() !== selectedPvSn) {
+      toast.error("Please select a valid in-stock PV Panel from the list");
+      return;
+    }
+
+    setBindingLoading(true);
+    try {
+      await apiClient.put(`/solar_device/${unitId}/pv`, {
+        solar_equipment_id: selectedPvSn
+      });
+      toast.success("PV Panel bound successfully");
+      setPvModalOpen(false);
+      fetchDeviceDetail();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "PV Panel binding failed");
+    } finally {
+      setBindingLoading(false);
+    }
+  };
 
   const handleReset = async () => {
     if (!device) return;
@@ -176,17 +229,30 @@ export default function SolarDeviceDetailPage() {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Solar PV Panel Box */}
-              <div className="p-6 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center shrink-0">
-                  <Sun size={24} />
+              {/* Solar PV Panel Box with Bind Action */}
+              <div className="p-6 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4 group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-xl flex items-center justify-center shrink-0">
+                    <Sun size={24} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Solar PV Panel (S/N)</span>
+                    <span className="font-mono text-base font-black text-slate-900 dark:text-slate-100">
+                      {device.solar_equipment_id || <span className="text-slate-300 italic">Unbound</span>}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Solar PV Panel (S/N)</span>
-                  <span className="font-mono text-base font-black text-slate-900 dark:text-slate-100">
-                    {device.solar_equipment_id || <span className="text-slate-300 italic">Unbound</span>}
-                  </span>
-                </div>
+                <Button
+                  onClick={() => {
+                    setPvModalOpen(true);
+                    setIsPvDropdownOpen(false);
+                    fetchAvailablePvPanels();
+                  }}
+                  variant="outline"
+                  className="rounded-xl h-9 px-4 font-bold uppercase text-[9px] tracking-widest border-primary/30 text-primary hover:bg-primary hover:text-slate-950 shadow-sm transition-all"
+                >
+                  <Sun size={14} className="mr-1.5" /> Bind / Change PV
+                </Button>
               </div>
 
               {/* Radio Component */}
@@ -281,6 +347,138 @@ export default function SolarDeviceDetailPage() {
           </div>
         </Card>
       </div>
+
+      {/* Bind / Change PV Panel Modal Dialog */}
+      <Dialog open={bindModalOpen} onOpenChange={setPvModalOpen}>
+        <DialogContent className="max-w-[500px] p-8 border-none rounded-3xl shadow-2xl bg-white dark:bg-slate-900">
+          <DialogHeader className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <DialogTitle className="text-2xl font-black italic uppercase flex items-center gap-3 text-slate-900 dark:text-white">
+              <Sun size={24} className="text-primary" /> Bind PV Panel
+            </DialogTitle>
+            <DialogDescription className="text-xs font-bold text-slate-400 uppercase tracking-tight">
+              Bind or replace the PV Solar Panel S/N for System Box <span className="font-mono text-slate-900 dark:text-slate-100 font-black">#{device.shs_machine_id}</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleBindPv} className="space-y-6 pt-4">
+            <div className="space-y-3 relative">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center justify-between">
+                <span>PV Panel S/N (Solar Equipment ID)</span>
+                {selectedPvSn && pvSnInput.trim() === selectedPvSn ? (
+                  <span className="text-[10px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Verified System PV Panel
+                  </span>
+                ) : pvSnInput.trim() !== '' ? (
+                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                    ⚠️ Must select from in-stock list
+                  </span>
+                ) : null}
+              </label>
+
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                <input
+                  type="text"
+                  required
+                  placeholder="TYPE TO SEARCH IN-STOCK PV PANEL S/N..."
+                  className={cn(
+                    "w-full h-14 pl-12 pr-10 border-2 bg-slate-50/50 dark:bg-slate-950/50 rounded-2xl outline-none font-mono font-black text-base transition-all text-slate-900 dark:text-slate-100 uppercase",
+                    selectedPvSn && pvSnInput.trim() === selectedPvSn
+                      ? "border-green-500/50 bg-green-50/10 dark:bg-green-500/5 text-green-600 dark:text-green-400"
+                      : pvSnInput.trim() !== '' && selectedPvSn !== pvSnInput.trim()
+                      ? "border-amber-500/50 focus:border-amber-500"
+                      : "border-slate-100 dark:border-slate-800 focus:border-primary"
+                  )}
+                  value={pvSnInput}
+                  onFocus={() => {
+                    setIsPvDropdownOpen(true);
+                    fetchAvailablePvPanels(pvSnInput);
+                  }}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPvSnInput(val);
+                    setSelectedPvSn(null);
+                    setIsPvDropdownOpen(true);
+                    fetchAvailablePvPanels(val);
+                  }}
+                />
+                {loadingPv && (
+                  <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-primary" size={18} />
+                )}
+              </div>
+
+              {/* Auto-suggest Dropdown List */}
+              {isPvDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl z-[100] overflow-hidden p-2 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="text-[9px] font-black uppercase text-slate-400 px-3 py-1.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 mb-1">
+                    <span>In-Stock PV Panels Match ({pvPanels.length})</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsPvDropdownOpen(false)}
+                      className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-[10px] underline"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <ScrollArea className="max-h-[180px]">
+                    {loadingPv ? (
+                      <div className="py-6 text-center flex items-center justify-center gap-2 text-slate-400 text-xs font-bold">
+                        <Loader2 className="animate-spin text-primary" size={16} /> Searching PV Inventory...
+                      </div>
+                    ) : pvPanels.length === 0 ? (
+                      <div className="py-6 text-center text-xs font-bold text-slate-400 italic">
+                        No matching in-stock PV panels found
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {pvPanels.map((p) => {
+                          const sn = p.pv_sn || p.solar_equipment_id || p.pv_panel_sn || `PV-${p.id}`;
+                          return (
+                            <button
+                              key={p.id || sn}
+                              type="button"
+                              onClick={() => {
+                                setPvSnInput(sn);
+                                setSelectedPvSn(sn);
+                                setIsPvDropdownOpen(false);
+                                toast.success(`Selected PV Panel: ${sn}`);
+                              }}
+                              className={cn(
+                                "w-full text-left px-3 py-2.5 rounded-xl transition-all flex items-center justify-between border border-transparent font-mono text-xs font-black",
+                                selectedPvSn === sn
+                                  ? "bg-primary text-slate-950"
+                                  : "hover:bg-primary/10 hover:text-primary hover:border-primary/20 text-slate-900 dark:text-slate-100"
+                              )}
+                            >
+                              <span className="tracking-wider">{sn}</span>
+                              <Badge variant="outline" className="text-[8px] font-black uppercase border-none bg-slate-100 dark:bg-slate-800">
+                                In Stock
+                              </Badge>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="ghost" onClick={() => setPvModalOpen(false)} className="flex-1 h-14 rounded-2xl font-black uppercase text-xs">
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={bindingLoading || !selectedPvSn || pvSnInput.trim() !== selectedPvSn}
+                className="flex-1 h-14 bg-primary text-slate-950 rounded-2xl font-black uppercase text-xs shadow-lg shadow-primary/20 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {bindingLoading ? <Loader2 className="animate-spin" size={18} /> : "Commit PV Binding"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
