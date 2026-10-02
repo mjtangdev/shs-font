@@ -20,8 +20,18 @@ export const SERVER_URLS: Record<string, string> = {
 // ------------------------------------------------------------------------------
 export const ACTIVE_ENV_KEY = "local";
 
-// 优先使用 Docker/系统环境变量 NEXT_PUBLIC_API_URL；无环境变量时使用 ACTIVE_ENV_KEY 对应地址
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  SERVER_URLS[ACTIVE_ENV_KEY] ||
-  "http://localhost:8008/api/v1";
+// 动态计算 API 地址：优先使用显式环境变量；若环境变量为空，在浏览器端自动绑定当前访问 IP/域名 (8008 端口)
+const getApiBaseUrl = (): string => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return `http://${hostname}:8008/api/v1`;
+    }
+  }
+  return SERVER_URLS[ACTIVE_ENV_KEY] || "http://localhost:8008/api/v1";
+};
+
+export const API_BASE_URL = getApiBaseUrl();

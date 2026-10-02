@@ -382,6 +382,9 @@ export default function FinancePage() {
     try {
       const params = new URLSearchParams();
       if (selectedRegionId) params.append('region_id', selectedRegionId.toString());
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      if (searchQuery) params.append('search', searchQuery);
 
       const response = await apiClient.get(`/finance/export-customer-summary?${params.toString()}`, {
         responseType: 'blob'

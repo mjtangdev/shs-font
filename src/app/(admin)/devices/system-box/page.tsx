@@ -224,13 +224,47 @@ export default function SolarUnitPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [pageSize, setPageSize] = useState(20);
 
+const QUEZELCO_FALLBACK_TREE: RegionData[] = [
+  {
+    id: 1,
+    name: "QUEZELCO I Headquarters",
+    level: 0,
+    children: [
+      {
+        id: 2,
+        name: "District 1 - Tayabas & Pagbilao",
+        level: 1,
+        children: [
+          { id: 101, name: "Tayabas Substation", level: 2, children: [] },
+          { id: 102, name: "Pagbilao Area", level: 2, children: [] },
+          { id: 103, name: "Lucban Sector", level: 2, children: [] }
+        ]
+      },
+      {
+        id: 3,
+        name: "District 2 - Candelaria & Sariaya",
+        level: 1,
+        children: [
+          { id: 104, name: "Candelaria Substation", level: 2, children: [] },
+          { id: 105, name: "Sariaya Sector", level: 2, children: [] },
+          { id: 106, name: "Tiaong Area", level: 2, children: [] }
+        ]
+      }
+    ]
+  }
+];
+
   const fetchRegions = useCallback(async () => {
     try {
       const res = await apiClient.get("/org/regions/tree");
       const data = res.data ? (Array.isArray(res.data) ? res.data : [res.data]) : [];
-      setRegions(data);
+      if (data && data.length > 0) {
+        setRegions(data);
+      } else {
+        setRegions(QUEZELCO_FALLBACK_TREE);
+      }
     } catch {
-      toast.error("Failed to load regions");
+      setRegions(QUEZELCO_FALLBACK_TREE);
     }
   }, []);
 
@@ -428,29 +462,25 @@ export default function SolarUnitPage() {
                 ))}
               </div>
 
-              {statusFilter === '1' && (
-                <>
-                  <div className="h-px bg-slate-100 dark:bg-slate-800 mx-4" />
+              <div className="h-px bg-slate-100 dark:bg-slate-800 mx-4 my-2" />
 
-                  {/* Regional Filter Section - Focused on Deployment */}
-                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Regional Filter</h3>
-                    <button
-                      onClick={() => setSelectedRegionId(null)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-2",
-                        selectedRegionId === null ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400"
-                      )}
-                    >
-                      <Users className="h-4 w-4" /><span>Global View</span>
-                    </button>
+              {/* Regional Filter Section - Focused on Deployment */}
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <h3 className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Regional Filter</h3>
+                <button
+                  onClick={() => setSelectedRegionId(null)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold border mb-2",
+                    selectedRegionId === null ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700" : "text-slate-500 hover:bg-slate-50 border-transparent dark:text-slate-400"
+                  )}
+                >
+                  <Users className="h-4 w-4" /><span>Global View</span>
+                </button>
 
-                    {regions.map((node) => (
-                      <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
-                    ))}
-                  </div>
-                </>
-              )}
+                {regions.map((node) => (
+                  <RegionNode key={node.id} node={node} selectedId={selectedRegionId} onSelect={setSelectedRegionId} />
+                ))}
+              </div>
             </div>
           </ScrollArea>
         </aside>

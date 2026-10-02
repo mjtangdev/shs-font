@@ -3,9 +3,9 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  CheckCircle2, Loader2, Search,
+  CheckCircle2, Loader2,
   FileSpreadsheet, Hash, Zap, Cpu, Calendar, Layers,
-  ChevronLeft, ChevronRight, ChevronDown, Sun
+  ChevronLeft, ChevronRight, ChevronDown
 } from 'lucide-react';
 import { toast } from "sonner";
 import apiClient from '@/lib/axios';
@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 
 // --- [INDUSTRIAL CALENDAR PICKER] ---
 const MONTHS_EN = [
@@ -145,29 +144,6 @@ export default function CreateSolarDevicePage() {
     status: 0, // 默认为 IN STOCK
   });
 
-  // PV Autocomplete states
-  const [pvInput, setPvInput] = useState('');
-  const [selectedPvSn, setSelectedPvSn] = useState<string | null>(null);
-  const [pvPanels, setPvPanels] = useState<any[]>([]);
-  const [loadingPv, setLoadingPv] = useState(false);
-  const [isPvDropdownOpen, setIsPvDropdownOpen] = useState(false);
-
-  const fetchAvailablePvPanels = async (query: string = '') => {
-    setLoadingPv(true);
-    try {
-      const res = await apiClient.get('/solar_device/pv-list', {
-        params: { status: 0, search: query.trim() || undefined, limit: 30 }
-      });
-      setPvPanels(res.data.items || res.data || []);
-    } catch {
-      // fallback
-    } finally {
-      setLoadingPv(false);
-    }
-  };
-
-  const isPvValid = pvInput.trim() === '' || selectedPvSn === pvInput.trim();
-
   // --- 批量上传逻辑 ---
   const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -201,24 +177,16 @@ export default function CreateSolarDevicePage() {
       return;
     }
 
-    if (!isPvValid) {
-      toast.error("Please select a valid in-stock PV Panel from the system list");
-      return;
-    }
-
     setLoading(true);
     try {
       const todayFormatted = new Date().toISOString().split('T')[0];
       const dateVal = formData.production_date || todayFormatted;
 
-      const payload: any = {
+      const payload = {
         shs_machine_id: formData.shs_machine_id.trim(),
+        solar_equipment_id: `${formData.shs_machine_id.trim()}1`,
         production_date: `${dateVal}T00:00:00`
       };
-
-      if (selectedPvSn && pvInput.trim() === selectedPvSn) {
-        payload.solar_equipment_id = selectedPvSn;
-      }
 
       await apiClient.post('/solar_device/create', payload);
       toast.success("System Box registered successfully");
@@ -316,121 +284,15 @@ export default function CreateSolarDevicePage() {
               </div>
             </div>
 
-            {/* PV Panel Autocomplete Search & Select Field */}
-            <div className="space-y-3 relative">
-              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1 flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Sun size={14} className="text-primary" /> Bind PV Panel S/N (Solar Equipment ID)
-                </span>
-                {selectedPvSn && pvInput.trim() === selectedPvSn ? (
-                  <span className="text-[10px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Verified System PV Panel
-                  </span>
-                ) : pvInput.trim() !== '' ? (
-                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
-                    ⚠️ Must select from in-stock system list
-                  </span>
-                ) : (
-                  <span className="text-[9px] text-slate-400 italic">Optional: Type to search in-stock PV panels</span>
-                )}
-              </label>
-
-              <div className="relative">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
-                <input
-                  type="text"
-                  placeholder="TYPE TO SEARCH IN-STOCK PV PANEL S/N..."
-                  className={cn(
-                    "w-full h-[64px] pl-16 pr-12 border-2 bg-slate-50/50 dark:bg-slate-950/50 rounded-xl outline-none font-mono font-black text-lg transition-all text-slate-900 dark:text-slate-100 uppercase",
-                    selectedPvSn && pvInput.trim() === selectedPvSn
-                      ? "border-green-500/50 bg-green-50/10 dark:bg-green-500/5 text-green-600 dark:text-green-400"
-                      : pvInput.trim() !== '' && selectedPvSn !== pvInput.trim()
-                      ? "border-amber-500/50 focus:border-amber-500"
-                      : "border-slate-100 dark:border-slate-800 focus:border-primary"
-                  )}
-                  value={pvInput}
-                  onFocus={() => {
-                    setIsPvDropdownOpen(true);
-                    fetchAvailablePvPanels(pvInput);
-                  }}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setPvInput(val);
-                    setSelectedPvSn(null);
-                    setIsPvDropdownOpen(true);
-                    fetchAvailablePvPanels(val);
-                  }}
-                />
-                {loadingPv && (
-                  <Loader2 className="absolute right-6 top-1/2 -translate-y-1/2 animate-spin text-primary" size={20} />
-                )}
-              </div>
-
-              {/* Auto-suggest Dropdown List */}
-              {isPvDropdownOpen && (
-                <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl shadow-2xl z-[100] overflow-hidden p-2 animate-in fade-in zoom-in-95 duration-150">
-                  <div className="text-[9px] font-black uppercase text-slate-400 px-3 py-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 mb-1">
-                    <span>In-Stock PV Panels Match ({pvPanels.length})</span>
-                    <button
-                      type="button"
-                      onClick={() => setIsPvDropdownOpen(false)}
-                      className="text-slate-400 hover:text-slate-900 dark:hover:text-white text-[10px] underline"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  <ScrollArea className="max-h-[220px]">
-                    {loadingPv ? (
-                      <div className="py-8 text-center flex items-center justify-center gap-2 text-slate-400 text-xs font-bold">
-                        <Loader2 className="animate-spin text-primary" size={18} /> Searching PV Inventory...
-                      </div>
-                    ) : pvPanels.length === 0 ? (
-                      <div className="py-8 text-center text-xs font-bold text-slate-400 italic">
-                        No matching in-stock PV panels found in system
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        {pvPanels.map((p) => {
-                          const sn = p.pv_sn || p.solar_equipment_id || p.pv_panel_sn || `PV-${p.id}`;
-                          return (
-                            <button
-                              key={p.id || sn}
-                              type="button"
-                              onClick={() => {
-                                setPvInput(sn);
-                                setSelectedPvSn(sn);
-                                setIsPvDropdownOpen(false);
-                                toast.success(`Selected & Verified PV Panel: ${sn}`);
-                              }}
-                              className={cn(
-                                "w-full text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between border border-transparent font-mono text-xs font-black",
-                                selectedPvSn === sn
-                                  ? "bg-primary text-slate-950"
-                                  : "hover:bg-primary/10 hover:text-primary hover:border-primary/20 text-slate-900 dark:text-slate-100"
-                              )}
-                            >
-                              <span className="tracking-wider">{sn}</span>
-                              <Badge variant="outline" className="text-[8px] font-black uppercase border-none bg-slate-100 dark:bg-slate-800">
-                                In Stock
-                              </Badge>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </div>
-              )}
-            </div>
-
-            {/* 子 ID 展示区 - 独立一行 */}
+            {/* 子 ID 展示区 - 4项全配件预览 */}
             {formData.shs_machine_id && (
               <div className="p-8 bg-slate-50/80 dark:bg-slate-800/40 rounded-[24px] border border-slate-100 dark:border-slate-700/50 animate-in fade-in slide-in-from-top-2 duration-300">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
                   <Layers size={12} className="text-primary" /> Derived Component Identities
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
+                    { label: 'Solar Equipment', suffix: '1', idVal: `${formData.shs_machine_id}1`, color: 'text-blue-500' },
                     { label: 'Radio Component', suffix: '2', idVal: `${formData.shs_machine_id}2`, color: 'text-purple-500' },
                     { label: 'Flashlight Unit', suffix: '3', idVal: `${formData.shs_machine_id}3`, color: 'text-orange-500' },
                     { label: 'LED Light Component', suffix: '4', idVal: `${formData.shs_machine_id}4`, color: 'text-emerald-500' }
@@ -452,7 +314,7 @@ export default function CreateSolarDevicePage() {
 
             <button 
               type="submit"
-              disabled={loading || !isPvValid}
+              disabled={loading}
               className="w-full h-24 bg-primary text-slate-950 rounded-[20px] font-black uppercase text-xl shadow-2xl shadow-primary/20 active:scale-[0.97] hover:bg-slate-900 hover:text-white transition-all flex items-center justify-center gap-6 mt-12 disabled:opacity-40 disabled:cursor-not-allowed group"
             >
               {loading ? (
