@@ -251,7 +251,7 @@ export function Navbar() {
                       <DropdownMenuItem asChild className="p-0"><Link href="/devices/pos" className={dropdownItemStyles}><CreditCard size={16}/> {t('pos')}</Link></DropdownMenuItem>
                     )}
                     <DropdownMenuItem asChild className="p-0"><Link href="/devices/system-box" className={dropdownItemStyles}><Tablet size={16}/> {t('solar_units')}</Link></DropdownMenuItem>
-                    {/* <DropdownMenuItem asChild className="p-0"><Link href="/devices/pv" className={dropdownItemStyles}><Sun size={16}/> {t('pv_panels')}</Link></DropdownMenuItem> */}
+                    <DropdownMenuItem asChild className="p-0"><Link href="/devices/pv" className={dropdownItemStyles}><Sun size={16}/> {t('pv_panels')}</Link></DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
